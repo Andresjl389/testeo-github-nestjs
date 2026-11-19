@@ -1,99 +1,957 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Sistema de Gestión de Inventario – API REST
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+> **Si estás leyendo esto, ya tienes el repositorio clonado.** Empieza por la sección [3. Estado actual del repositorio](#3-estado-actual-del-repositorio) y luego sigue el [4. Plan de trabajo](#4-plan-de-trabajo). No empieces a programar módulos antes de terminar la **Fase 0**.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Tabla de contenido
 
-## Description
+1. [Descripción del proyecto](#1-descripción-del-proyecto)
+2. [Tecnologías obligatorias](#2-tecnologías-obligatorias)
+3. [Estado actual del repositorio](#3-estado-actual-del-repositorio)
+4. [Plan de trabajo](#4-plan-de-trabajo)
+5. [Puesta en marcha local](#5-puesta-en-marcha-local)
+6. [Funcionalidades del sistema](#6-funcionalidades-del-sistema)
+7. [Endpoints esperados](#7-endpoints-esperados)
+8. [Modelo de base de datos](#8-modelo-de-base-de-datos)
+9. [Estructura sugerida del proyecto](#9-estructura-sugerida-del-proyecto)
+10. [Distribución de tareas](#10-distribución-de-tareas)
+11. [Reglas obligatorias de Git y GitHub](#11-reglas-obligatorias-de-git-y-github)
+12. [Revisión de Pull Requests](#12-revisión-de-pull-requests)
+13. [Pruebas](#13-pruebas)
+14. [Preparación para producción](#14-preparación-para-producción)
+15. [Entregables](#15-entregables)
+16. [Criterios de evaluación](#16-criterios-de-evaluación)
+17. [Consideraciones finales](#17-consideraciones-finales)
+18. [Decisiones de diseño del equipo (completar)](#18-decisiones-de-diseño-del-equipo-completar)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+---
 
-## Project setup
+## 1. Descripción del proyecto
+
+El objetivo de este proyecto es desarrollar una API REST para administrar un sistema de inventario, permitiendo gestionar productos, categorías, entradas y salidas de mercancía.
+
+El sistema deberá garantizar la consistencia de la información, mantener un historial de movimientos y evitar operaciones que puedan generar inconsistencias en las existencias.
+
+Este proyecto será desarrollado colaborativamente por dos desarrolladores utilizando **NestJS, PostgreSQL y GitHub**.
+
+El proyecto se realizará inicialmente en un entorno local. Posteriormente, deberá prepararse y desplegarse en un entorno de producción.
+
+### Objetivos de aprendizaje
+
+Durante el desarrollo se evaluarán los siguientes conocimientos:
+
+- Desarrollo de APIs REST con NestJS.
+- Arquitectura modular y separación de responsabilidades.
+- Diseño y modelado de bases de datos relacionales.
+- Conexión y operaciones con PostgreSQL.
+- Manejo de relaciones entre entidades.
+- Implementación de lógica de negocio.
+- Validaciones y manejo de excepciones.
+- Manejo de transacciones en bases de datos.
+- Uso de Git en un entorno colaborativo.
+- Creación y revisión de Pull Requests.
+- Resolución de conflictos de integración.
+- Documentación de APIs con Swagger.
+
+---
+
+## 2. Tecnologías obligatorias
+
+| Tecnología | Uso |
+|---|---|
+| Node.js | Entorno de ejecución |
+| TypeScript | Lenguaje de programación |
+| NestJS | Framework backend |
+| PostgreSQL | Base de datos |
+| Prisma ORM | Acceso y gestión de datos |
+| Git | Control de versiones |
+| GitHub | Repositorio y Pull Requests |
+| Swagger | Documentación de endpoints |
+
+No se requiere desarrollar frontend. Toda la interacción con el sistema deberá realizarse mediante endpoints HTTP, utilizando herramientas como Postman, Insomnia o Swagger.
+
+---
+
+## 3. Estado actual del repositorio
+
+El repositorio contiene **únicamente el proyecto base que genera NestJS** (`nest new`). Esto es lo que ya existe y lo que les toca construir:
+
+| Elemento | Estado |
+|---|---|
+| Proyecto NestJS con TypeScript, ESLint, Prettier y Jest | ✅ Ya existe |
+| `src/main.ts`, `src/app.module.ts`, `AppController`, `AppService` | ✅ Ya existe (ejemplo "Hello World") |
+| `.gitignore` que excluye `.env` y `node_modules` | ✅ Ya existe |
+| Rama `main` | ✅ Ya existe |
+| Rama `develop` | ❌ Deben crearla (Fase 0) |
+| Prisma (instalación, `schema.prisma`, migraciones) | ❌ Deben configurarlo |
+| Servicio/módulo de Prisma para NestJS | ❌ Deben crearlo |
+| Validación de datos (DTOs con `class-validator`) | ❌ Deben configurarlo |
+| Swagger en `/api/docs` | ❌ Deben configurarlo |
+| Archivo `.env.example` | ❌ Deben crearlo |
+| Módulos de categorías, productos, movimientos y reportes | ❌ Deben crearlos |
+
+Scripts disponibles en `package.json`:
+
+| Comando | Para qué sirve |
+|---|---|
+| `npm run start:dev` | Ejecuta la API en modo desarrollo (se reinicia con cada cambio) |
+| `npm run build` | Compila el proyecto a la carpeta `dist/` |
+| `npm run start:prod` | Ejecuta la versión compilada |
+| `npm run lint` | Revisa y corrige el estilo del código |
+| `npm run format` | Formatea el código con Prettier |
+| `npm run test` | Ejecuta las pruebas unitarias (`*.spec.ts`) |
+| `npm run test:e2e` | Ejecuta las pruebas de integración (`test/*.e2e-spec.ts`) |
+| `npm run test:cov` | Ejecuta las pruebas con reporte de cobertura |
+
+---
+
+## 4. Plan de trabajo
+
+Sigan las fases en orden. Las fases 0 y 1 se hacen **en equipo**; a partir de la fase 2 cada uno trabaja en sus módulos.
+
+### Fase 0 – Preparación del entorno (ambos)
+
+1. Cada uno sigue la sección [5. Puesta en marcha local](#5-puesta-en-marcha-local) hasta ver el "Hello World!" en `http://localhost:3000`.
+2. **Uno solo** de los dos crea la rama `develop` a partir de `main` y la publica. Es la única vez que se trabaja directamente sobre `develop`:
+
+   ```bash
+   git checkout main
+   git pull
+   git checkout -b develop
+   git push -u origin develop
+   ```
+
+3. El otro desarrollador la descarga:
+
+   ```bash
+   git fetch origin
+   git checkout develop
+   ```
+
+4. **Uno solo** crea la rama `chore/project-setup` desde `develop` y configura la base técnica del proyecto:
+   - Instalar Prisma y ejecutar `npx prisma init` (**una sola vez**; si los dos lo ejecutan, tendrán archivos duplicados y conflictos).
+   - Crear un módulo/servicio de Prisma reutilizable por todos los módulos.
+   - Instalar y configurar `class-validator` y `class-transformer` con un `ValidationPipe` global en `main.ts`.
+   - Instalar y configurar `@nestjs/swagger` para que la documentación quede en `/api/docs`.
+   - Crear el archivo `.env.example`.
+   - Abrir un Pull Request hacia `develop`. **El otro desarrollador lo revisa y lo aprueba.**
+
+> **Nota sobre Prisma:** la forma de configurar el cliente de Prisma cambia entre versiones mayores (ubicación del cliente generado, archivo de configuración, adaptadores de base de datos, etc.). Revisen la guía oficial de Prisma para la versión que instalen y la guía de integración con NestJS. Si algo de este README no coincide con la versión instalada, manda la documentación oficial; documenten lo que hicieron.
+
+### Fase 1 – Diseño de la base de datos (ambos)
+
+1. Lean juntos la sección [8. Modelo de base de datos](#8-modelo-de-base-de-datos) y respondan las preguntas de diseño.
+2. Hagan el diagrama entidad-relación.
+3. Escriban el `schema.prisma` en una rama `feat/database-schema` y generen la primera migración.
+4. Completen la sección [18. Decisiones de diseño del equipo](#18-decisiones-de-diseño-del-equipo-completar).
+5. Pull Request hacia `develop`, revisado por el compañero.
+
+Hacer el esquema completo **antes** de los módulos evita que el Desarrollador B tenga que esperar a que exista la tabla de productos, y evita que ambos generen migraciones en paralelo que choquen entre sí.
+
+### Fase 2 – Desarrollo en paralelo (cada uno en sus ramas)
+
+| Desarrollador A | Desarrollador B |
+|---|---|
+| `feature/categories` | `feature/inventory-movements` |
+| `feature/products` | `feature/inventory-reports` |
+
+Ver detalle en [10. Distribución de tareas](#10-distribución-de-tareas).
+
+### Fase 3 – Integración y conflicto obligatorio (ambos)
+
+Integración por Pull Requests y resolución del conflicto en `src/app.module.ts`. Ver [Ejercicio obligatorio de conflictos](#ejercicio-obligatorio-de-conflictos).
+
+### Fase 4 – Pruebas y documentación (ambos)
+
+Pruebas unitarias y de integración, Swagger completo y README actualizado.
+
+### Fase 5 – Producción
+
+Se define en una segunda etapa. Ver [14. Preparación para producción](#14-preparación-para-producción).
+
+---
+
+## 5. Puesta en marcha local
+
+### Requisitos previos
+
+- Node.js (versión LTS compatible con NestJS y Prisma).
+- npm.
+- PostgreSQL.
+- Git.
+- Un cliente para realizar peticiones HTTP (Postman, Insomnia o Swagger).
+
+Verifiquen las versiones instaladas:
 
 ```bash
-$ npm install
+node -v
+npm -v
+git --version
+psql --version
 ```
 
-## Compile and run the project
+### Paso 1. Verificar el repositorio clonado
+
+Ubíquense en la carpeta del proyecto y revisen que el remoto y las ramas estén bien:
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+git remote -v
+git branch -a
 ```
 
-## Run tests
+Configuren su identidad de Git (aparecerá en el historial de commits, que también se evalúa):
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+git config user.name "Tu Nombre"
+git config user.email "tu-correo@ejemplo.com"
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Paso 2. Instalar dependencias
 
 ```bash
-$ npm install -g mau
-$ mau deploy
+npm install
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### Paso 3. Verificar que el proyecto base funciona
 
-## Resources
+```bash
+npm run start:dev
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+Abran `http://localhost:3000`. Deben ver el mensaje `Hello World!`. Si esto no funciona, resuélvanlo antes de continuar.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### Paso 4. Crear la base de datos
 
-## Support
+Desde PostgreSQL, crear una base de datos llamada:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```sql
+CREATE DATABASE inventory_management;
+```
 
-## Stay in touch
+### Paso 5. Configurar las variables de entorno
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Una vez exista el archivo `.env.example` (Fase 0), cada uno crea su `.env` a partir de él:
 
-## License
+```bash
+cp .env.example .env
+```
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Ejemplo de contenido:
+
+```env
+PORT=3000
+
+DATABASE_URL="postgresql://postgres:TU_PASSWORD@localhost:5432/inventory_management?schema=public"
+```
+
+Cada desarrollador deberá utilizar sus propias credenciales locales.
+
+**Importante:** el archivo `.env` no debe subirse al repositorio (ya está en `.gitignore`). El archivo `.env.example` sí se sube, con las variables necesarias y valores de ejemplo **sin credenciales reales**.
+
+### Paso 6. Configurar Prisma (solo en la Fase 0, una persona)
+
+```bash
+npm install @prisma/client
+npm install -D prisma
+npx prisma init
+```
+
+Esto crea la carpeta `prisma/` con el archivo de esquema. Allí se define el modelo de datos (Fase 1).
+
+### Paso 7. Ejecutar las migraciones
+
+La **primera** migración la crea quien escriba el esquema inicial:
+
+```bash
+npx prisma migrate dev --name init
+npx prisma generate
+```
+
+Después, cada vez que traigan cambios de `develop` que incluyan migraciones nuevas, apliquen esas migraciones en su base local:
+
+```bash
+npx prisma migrate dev
+npx prisma generate
+```
+
+Cuando cambien el esquema, creen una migración con un nombre descriptivo:
+
+```bash
+npx prisma migrate dev --name add_index_to_product_sku
+```
+
+Reglas para trabajar en equipo con migraciones:
+
+- Las migraciones (`prisma/migrations/`) se versionan y se suben al repositorio.
+- Nunca editen una migración que ya fue integrada en `develop`; si algo está mal, creen una migración nueva.
+- Avisen al compañero cuando su rama incluya una migración, para evitar que ambos creen migraciones al mismo tiempo sobre las mismas tablas.
+
+### Paso 8. Ejecutar el proyecto
+
+```bash
+npm run start:dev
+```
+
+API disponible en: `http://localhost:3000`
+
+### Paso 9. Documentación Swagger
+
+Una vez configurado Swagger (Fase 0), la documentación estará disponible en:
+
+`http://localhost:3000/api/docs`
+
+---
+
+## 6. Funcionalidades del sistema
+
+### Módulo 1. Gestión de categorías
+
+Permite administrar las categorías a las que pertenecen los productos.
+
+**Funcionalidades:**
+
+- Crear categorías.
+- Listar todas las categorías.
+- Consultar una categoría por su identificador.
+- Actualizar categorías.
+- Eliminar categorías.
+- Consultar los productos asociados a una categoría.
+
+**Reglas de negocio:**
+
+1. El nombre de la categoría es obligatorio.
+2. No se permiten categorías con nombres duplicados.
+3. No se puede eliminar una categoría que tenga productos asociados.
+4. Se deben validar los identificadores antes de realizar operaciones.
+
+### Módulo 2. Gestión de productos
+
+Permite administrar los productos del inventario.
+
+**Información mínima de un producto:**
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| id | UUID | Identificador único |
+| name | String | Nombre del producto |
+| description | String | Descripción |
+| sku | String | Código único del producto |
+| price | Decimal | Precio unitario |
+| stock | Integer | Existencias actuales |
+| minStock | Integer | Nivel mínimo de existencias |
+| categoryId | UUID | Categoría asociada |
+| createdAt | DateTime | Fecha de creación |
+| updatedAt | DateTime | Fecha de actualización |
+
+**Funcionalidades:**
+
+- Crear productos.
+- Listar productos.
+- Consultar producto por identificador.
+- Actualizar productos.
+- Eliminar productos.
+- Buscar productos por nombre o SKU.
+- Filtrar productos por categoría.
+- Filtrar productos con existencias bajas.
+- Implementar paginación en los listados.
+
+**Reglas de negocio:**
+
+1. El nombre del producto es obligatorio.
+2. El SKU debe ser único.
+3. El precio debe ser mayor que cero.
+4. El stock inicial no puede ser negativo.
+5. El stock mínimo no puede ser negativo.
+6. Todo producto debe pertenecer a una categoría existente.
+7. No se debe permitir eliminar un producto que tenga movimientos de inventario registrados.
+8. Los cambios de existencias posteriores a la creación deben realizarse mediante movimientos de inventario, no mediante una actualización directa del stock.
+
+### Módulo 3. Movimientos de inventario
+
+Este módulo permitirá registrar todas las entradas y salidas de productos.
+
+**Tipos de movimientos:**
+
+- IN: Entrada de inventario.
+- OUT: Salida de inventario.
+
+**Información mínima de un movimiento:**
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| id | UUID | Identificador del movimiento |
+| productId | UUID | Producto relacionado |
+| type | Enum | IN u OUT |
+| quantity | Integer | Cantidad del movimiento |
+| description | String | Motivo del movimiento |
+| createdAt | DateTime | Fecha del movimiento |
+
+**Funcionalidades:**
+
+- Registrar entrada de inventario.
+- Registrar salida de inventario.
+- Consultar movimientos.
+- Consultar movimientos por producto.
+- Consultar movimientos por tipo.
+- Consultar movimientos por rango de fechas.
+- Consultar el historial de movimientos de un producto.
+
+**Reglas de negocio:**
+
+1. Todo movimiento debe estar asociado a un producto existente.
+2. La cantidad debe ser un número entero mayor que cero.
+3. Una entrada debe incrementar las existencias del producto.
+4. Una salida debe disminuir las existencias del producto.
+5. No se puede realizar una salida si no existe suficiente inventario.
+6. Cada movimiento debe generar un registro histórico.
+7. No se deben modificar las existencias directamente desde el módulo de productos.
+8. El registro del movimiento y la actualización del stock deben ejecutarse dentro de una transacción de base de datos.
+9. Si ocurre un error durante el movimiento, ninguna de las operaciones debe quedar aplicada parcialmente.
+10. No se deben eliminar movimientos históricos.
+
+### Módulo 4. Consulta de inventario
+
+Se deberá implementar una funcionalidad que permita consultar el estado general del inventario.
+
+**Información esperada:**
+
+- Cantidad total de productos registrados.
+- Cantidad total de unidades disponibles.
+- Productos con stock bajo.
+- Productos sin existencias.
+- Valor total del inventario, calculado a partir del precio y las existencias.
+- Productos con mayor cantidad de movimientos.
+
+Esta información deberá obtenerse mediante consultas a la base de datos, evitando realizar cálculos innecesarios en el cliente.
+
+---
+
+## 7. Endpoints esperados
+
+Los siguientes endpoints son una guía funcional. Los desarrolladores podrán proponer ajustes siempre que mantengan las funcionalidades solicitadas.
+
+### Categorías
+
+| Método | Endpoint | Descripción |
+|---|---|---|
+| POST | /categories | Crear categoría |
+| GET | /categories | Listar categorías |
+| GET | /categories/:id | Consultar categoría |
+| PATCH | /categories/:id | Actualizar categoría |
+| DELETE | /categories/:id | Eliminar categoría |
+
+### Productos
+
+| Método | Endpoint | Descripción |
+|---|---|---|
+| POST | /products | Crear producto |
+| GET | /products | Listar productos |
+| GET | /products/:id | Consultar producto |
+| PATCH | /products/:id | Actualizar producto |
+| DELETE | /products/:id | Eliminar producto |
+
+El listado deberá soportar parámetros como:
+
+- page
+- limit
+- search
+- categoryId
+- lowStock
+
+Ejemplo:
+
+```
+GET /products?page=1&limit=10&search=teclado
+```
+
+### Movimientos
+
+| Método | Endpoint | Descripción |
+|---|---|---|
+| POST | /inventory-movements | Registrar movimiento |
+| GET | /inventory-movements | Listar movimientos |
+| GET | /inventory-movements/:id | Consultar movimiento |
+| GET | /inventory-movements/product/:productId | Historial de un producto |
+
+Los listados deberán permitir filtrar por:
+
+- type
+- productId
+- startDate
+- endDate
+- page
+- limit
+
+### Reportes
+
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | /inventory/summary | Resumen general |
+| GET | /inventory/low-stock | Productos con stock bajo |
+| GET | /inventory/out-of-stock | Productos sin existencias |
+
+### Formato de respuestas y errores
+
+Acuerden entre los dos, antes de empezar los módulos, un formato común para:
+
+- Respuestas paginadas (por ejemplo: `data`, `total`, `page`, `limit`).
+- Errores (códigos HTTP a usar: `400`, `404`, `409`, etc., y estructura del mensaje).
+
+Documenten el acuerdo en la sección [18](#18-decisiones-de-diseño-del-equipo-completar). Ambos módulos deben responder de la misma forma.
+
+---
+
+## 8. Modelo de base de datos
+
+Las entidades y relaciones de esta sección son el **punto de partida mínimo**. El diseño final —tipos de datos, relaciones, restricciones e índices— **lo deben construir ustedes**, en equipo, durante la Fase 1.
+
+### Entidades mínimas
+
+#### Category
+
+- id
+- name
+- description
+- createdAt
+- updatedAt
+
+#### Product
+
+- id
+- name
+- description
+- sku
+- price
+- stock
+- minStock
+- categoryId
+- createdAt
+- updatedAt
+
+#### InventoryMovement
+
+- id
+- productId
+- type
+- quantity
+- description
+- createdAt
+
+### Relaciones
+
+- Una categoría puede tener muchos productos.
+- Un producto pertenece a una categoría.
+- Un producto puede tener muchos movimientos.
+- Cada movimiento pertenece a un producto.
+
+El identificador principal de las entidades deberá ser UUID.
+
+### Preguntas que deben resolver en el diseño
+
+No hay una única respuesta correcta para todas, pero sí deben poder **justificar** cada decisión.
+
+**Tipos de datos**
+
+1. ¿Qué tipo de dato usarán para `price`? ¿Por qué no es buena idea usar `Float` para dinero? ¿Qué precisión y escala necesitan?
+2. ¿Cómo representarán el tipo de movimiento (`IN` / `OUT`) en Prisma y cómo queda en PostgreSQL?
+3. ¿Qué campos son obligatorios y cuáles opcionales (por ejemplo, `description`)?
+4. ¿Quién genera el UUID: la aplicación o la base de datos?
+5. ¿Cómo se llenan automáticamente `createdAt` y `updatedAt`? ¿Por qué `InventoryMovement` no tiene `updatedAt`?
+
+**Relaciones**
+
+6. ¿En qué tabla queda la llave foránea de cada relación? ¿Cómo se declara la relación en **ambos** modelos dentro de `schema.prisma`?
+7. ¿Qué debe pasar en la base de datos si alguien intenta eliminar una categoría que tiene productos? ¿Y un producto que tiene movimientos? Investiguen las opciones de `onDelete` (`Cascade`, `Restrict`, `SetNull`, `NoAction`) y elijan la que proteja las reglas de negocio.
+8. ¿Esas reglas se validan solo en el servicio, solo en la base de datos o en ambos? ¿Qué ventaja tiene cada opción?
+
+**Restricciones e índices**
+
+9. ¿Qué campos deben ser únicos?
+10. ¿Por qué columnas se filtra o busca con frecuencia? (Pista: revisen los parámetros de los endpoints de la sección 7.) ¿Cuáles deberían tener índice?
+11. ¿Es posible impedir que `stock` sea negativo desde la propia base de datos y no solo desde el código? ¿Cómo se haría con Prisma y PostgreSQL?
+
+**Convenciones**
+
+12. ¿Los nombres de tablas y columnas en PostgreSQL quedarán en `camelCase` o en `snake_case`? (Investiguen `@map` y `@@map` en Prisma.)
+
+**Contratos entre módulos**
+
+13. Al registrar un movimiento hay que actualizar el `stock` del producto. ¿El módulo de movimientos usa directamente Prisma sobre la tabla de productos dentro de la transacción, o llama a un método del módulo de productos? ¿Qué implica cada opción para la transacción?
+14. ¿Qué métodos del módulo de productos necesita el módulo de movimientos y cuál será su firma?
+
+### Entregables de la Fase 1
+
+- Diagrama entidad-relación (puede ser con [Mermaid](https://mermaid.js.org/syntax/entityRelationshipDiagram.html) dentro de este README, dbdiagram.io, draw.io u otra herramienta).
+- `prisma/schema.prisma` con los tres modelos, sus relaciones, restricciones e índices.
+- Migración inicial en `prisma/migrations/`.
+- Sección [18](#18-decisiones-de-diseño-del-equipo-completar) completada con las respuestas a las preguntas anteriores.
+
+---
+
+## 9. Estructura sugerida del proyecto
+
+Es una sugerencia; pueden ajustarla si lo justifican.
+
+```
+prisma/
+├── schema.prisma
+└── migrations/
+src/
+├── main.ts
+├── app.module.ts
+├── prisma/                   # Módulo y servicio de Prisma (compartido)
+├── categories/
+│   ├── dto/
+│   ├── categories.controller.ts
+│   ├── categories.service.ts
+│   ├── categories.service.spec.ts
+│   └── categories.module.ts
+├── products/
+├── inventory-movements/
+└── inventory/                # Reportes
+test/
+└── *.e2e-spec.ts             # Pruebas de integración
+```
+
+El CLI de NestJS puede generar la estructura base de un módulo:
+
+```bash
+npx nest g resource categories
+```
+
+Revisen lo que genera: eliminen o ajusten lo que no se use.
+
+---
+
+## 10. Distribución de tareas
+
+El proyecto será desarrollado por dos aprendices.
+
+### Desarrollador A – Productos y categorías
+
+Responsabilidades:
+
+- Configurar el módulo de categorías.
+- Implementar el CRUD de categorías.
+- Implementar sus validaciones.
+- Configurar el módulo de productos.
+- Implementar el CRUD de productos.
+- Implementar búsqueda, filtros y paginación.
+- Implementar las relaciones entre productos y categorías.
+- Documentar sus endpoints.
+
+### Desarrollador B – Movimientos e inventario
+
+Responsabilidades:
+
+- Configurar el módulo de movimientos.
+- Implementar el registro de entradas.
+- Implementar el registro de salidas.
+- Implementar la actualización automática del stock.
+- Implementar las transacciones de base de datos.
+- Implementar el historial de movimientos.
+- Implementar filtros por producto, tipo y fechas.
+- Implementar los reportes de inventario.
+- Documentar sus endpoints.
+
+### Responsabilidades compartidas
+
+Ambos desarrolladores deberán:
+
+- Configurar la base técnica del proyecto (Fase 0).
+- Participar en el diseño inicial de la base de datos (Fase 1).
+- Acordar los contratos entre módulos.
+- Revisar el código del compañero.
+- Resolver conflictos de integración.
+- Mantener actualizado el README cuando corresponda.
+- Verificar que los cambios integrados no rompan funcionalidades existentes.
+
+---
+
+## 11. Reglas obligatorias de Git y GitHub
+
+Este proyecto debe desarrollarse siguiendo un flujo de trabajo colaborativo.
+
+### Ramas principales
+
+| Rama | Propósito |
+|---|---|
+| main | Código estable y preparado para producción |
+| develop | Rama de integración de funcionalidades |
+
+### Ramas de trabajo
+
+Cada desarrollador deberá crear ramas independientes **a partir de `develop`**.
+
+Ejemplos:
+
+- chore/project-setup
+- feat/database-schema
+- feature/categories
+- feature/products
+- feature/inventory-movements
+- feature/inventory-reports
+- fix/product-validation
+- fix/inventory-stock
+
+### Flujo de trabajo de una rama
+
+```bash
+# 1. Partir siempre de develop actualizado
+git checkout develop
+git pull origin develop
+
+# 2. Crear la rama de trabajo
+git checkout -b feature/categories
+
+# 3. Trabajar y hacer commits pequeños y descriptivos
+git add .
+git commit -m "feat: create category module"
+
+# 4. Antes de abrir el PR, traer lo último de develop
+git fetch origin
+git merge origin/develop
+# (resolver conflictos si aparecen, probar que todo funcione)
+
+# 5. Publicar la rama
+git push -u origin feature/categories
+
+# 6. Abrir el Pull Request en GitHub hacia develop
+```
+
+### Reglas de trabajo
+
+1. Está prohibido realizar push directamente a `main` o `develop` (excepto la creación inicial de `develop` en la Fase 0).
+2. Todas las funcionalidades deben desarrollarse en ramas independientes.
+3. Los cambios deben integrarse mediante Pull Requests.
+4. Todos los Pull Requests deberán dirigirse a `develop`.
+5. Cada desarrollador deberá revisar los Pull Requests del compañero.
+6. Ningún desarrollador podrá aprobar su propio Pull Request.
+7. Los Pull Requests deberán incluir una descripción de los cambios.
+8. Los commits deben tener mensajes descriptivos.
+9. Se deberá actualizar la rama de trabajo cuando `develop` tenga nuevos cambios.
+10. Se deberán resolver los conflictos de Git sin eliminar funcionalidades implementadas por el compañero.
+
+### Formato recomendado para commits
+
+Utilizar una convención de commits:
+
+- `feat`: nueva funcionalidad.
+- `fix`: corrección de errores.
+- `refactor`: reorganización del código.
+- `docs`: documentación.
+- `test`: pruebas.
+- `chore`: tareas de mantenimiento.
+
+Ejemplos:
+
+```
+feat: create product module
+feat: register inventory entry
+fix: prevent negative inventory
+docs: update installation guide
+```
+
+### Ejercicio obligatorio de conflictos
+
+Durante el desarrollo, ambos deberán modificar el archivo principal de integración de módulos:
+
+`src/app.module.ts`
+
+Cuando cada uno registre su módulo en el arreglo `imports` desde su propia rama, los dos estarán modificando las mismas líneas. Al integrar el segundo Pull Request se presentará un conflicto que deberán resolver.
+
+No se permite solucionar el conflicto eliminando el módulo o los cambios del otro desarrollador.
+
+Deberán demostrar que saben:
+
+- Identificar el origen del conflicto.
+- Actualizar su rama con `develop`.
+- Resolver los marcadores de conflicto (`<<<<<<<`, `=======`, `>>>>>>>`).
+- Verificar que ambos módulos estén registrados.
+- Ejecutar el proyecto después de resolver el conflicto.
+- Actualizar el Pull Request con la solución.
+
+Como evidencia, documenten en el Pull Request: captura del conflicto, cómo lo resolvieron y captura del proyecto funcionando con ambos módulos.
+
+---
+
+## 12. Revisión de Pull Requests
+
+Cada Pull Request deberá incluir:
+
+- Descripción de la funcionalidad.
+- Archivos modificados.
+- Cambios realizados en la base de datos.
+- Endpoints implementados.
+- Validaciones agregadas.
+- Evidencias de pruebas.
+- Explicación de posibles conflictos.
+
+> **Recomendación:** creen el archivo `.github/pull_request_template.md` con estos puntos para que GitHub los cargue automáticamente al abrir cada Pull Request.
+
+El desarrollador que revise el Pull Request deberá comprobar:
+
+- Que el código sea legible.
+- Que la lógica de negocio sea correcta.
+- Que las validaciones estén implementadas.
+- Que no se hayan introducido errores.
+- Que no se hayan duplicado funcionalidades.
+- Que los cambios sean compatibles con el resto del sistema.
+
+Para revisar bien, descarguen la rama del compañero y ejecútenla localmente; no se limiten a leer el código en GitHub:
+
+```bash
+git fetch origin
+git checkout feature/nombre-de-la-rama
+npm install
+npx prisma migrate dev
+npm run start:dev
+```
+
+Se deberán dejar comentarios cuando se encuentren errores o aspectos que deban corregirse.
+
+---
+
+## 13. Pruebas
+
+El proyecto deberá incluir pruebas para las funcionalidades principales.
+
+Como mínimo, se deberá probar:
+
+- Creación de productos.
+- Creación de categorías.
+- Validación de productos duplicados.
+- Validación de categorías duplicadas.
+- Registro de entradas de inventario.
+- Registro de salidas de inventario.
+- Intento de salida con stock insuficiente.
+- Intento de eliminar una categoría con productos asociados.
+- Intento de eliminar un producto con movimientos registrados.
+- Manejo de errores de base de datos.
+- Consistencia de existencias cuando ocurre un error en una transacción.
+
+Se deberán incluir pruebas unitarias y pruebas de integración para las reglas de negocio más importantes.
+
+- **Unitarias** (`src/**/*.spec.ts`, se ejecutan con `npm run test`): prueban servicios aislados, simulando (mock) el acceso a la base de datos.
+- **Integración** (`test/*.e2e-spec.ts`, se ejecutan con `npm run test:e2e`): prueban los endpoints contra una base de datos real. Se recomienda usar una base de datos separada para pruebas (por ejemplo `inventory_management_test`) para no borrar sus datos de desarrollo.
+
+---
+
+## 14. Preparación para producción
+
+La primera etapa del proyecto se realizará localmente.
+
+Una vez finalizada y aprobada la implementación local, se deberá preparar el backend para producción.
+
+Esta segunda etapa deberá contemplar:
+
+- Configuración de una base de datos PostgreSQL de producción.
+- Configuración de variables de entorno seguras.
+- Separación de configuraciones locales y productivas.
+- Ejecución de migraciones mediante Prisma.
+- Configuración del servidor de producción.
+- Manejo de errores y registros.
+- Verificación de conectividad con la base de datos.
+- Pruebas de los endpoints desplegados.
+
+**Importante:** las migraciones en producción deben ejecutarse con:
+
+```bash
+npx prisma migrate deploy
+```
+
+No se deberá utilizar `prisma migrate dev` en producción.
+
+Las credenciales de producción nunca deberán almacenarse en el repositorio.
+
+La plataforma de alojamiento y la infraestructura de producción serán definidas en una segunda etapa.
+
+---
+
+## 15. Entregables
+
+Al finalizar el proyecto, se deberá entregar:
+
+1. Repositorio de GitHub con el código fuente.
+2. API desarrollada con NestJS.
+3. Base de datos PostgreSQL correctamente estructurada.
+4. Migraciones de Prisma.
+5. Archivo `.env.example`.
+6. Documentación Swagger.
+7. Pruebas de las funcionalidades principales.
+8. README actualizado con instrucciones de instalación y la sección 18 completa.
+9. Historial de commits.
+10. Pull Requests realizados y revisados.
+11. Evidencias de resolución de conflictos.
+12. Proyecto funcionando localmente.
+
+---
+
+## 16. Criterios de evaluación
+
+| Criterio | Puntaje |
+|---|---:|
+| Lógica de negocio | 25 |
+| Base de datos y SQL | 15 |
+| NestJS y arquitectura | 15 |
+| Git y resolución de conflictos | 20 |
+| Pull Requests y revisión de código | 15 |
+| Documentación y pruebas | 10 |
+| **Total** | **100** |
+
+La evaluación será individual, incluso cuando el proyecto sea desarrollado colaborativamente.
+
+Cada desarrollador deberá demostrar conocimiento sobre el código que implementó y sobre los cambios que integró del compañero.
+
+---
+
+## 17. Consideraciones finales
+
+Este proyecto busca simular un entorno de desarrollo real.
+
+No se evaluará únicamente que los endpoints funcionen. También se tendrá en cuenta la calidad del código, la organización, las decisiones técnicas, el manejo de errores, el trabajo colaborativo y la capacidad para resolver problemas.
+
+Los desarrolladores tendrán libertad para proponer mejoras técnicas, siempre que cumplan los requerimientos funcionales y respeten las reglas de trabajo establecidas.
+
+**El objetivo no es solamente entregar una API funcional, sino demostrar que se tienen las competencias necesarias para participar en un equipo de desarrollo backend.**
+
+---
+
+## 18. Decisiones de diseño del equipo (completar)
+
+> Esta sección la completan los desarrolladores durante la Fase 1 y la mantienen actualizada. Reemplacen los textos entre corchetes.
+
+**Equipo**
+
+| Rol | Nombre | Usuario de GitHub |
+|---|---|---|
+| Desarrollador A – Productos y categorías | [nombre] | [usuario] |
+| Desarrollador B – Movimientos e inventario | [nombre] | [usuario] |
+
+### Diagrama entidad-relación
+
+[Insertar aquí el diagrama (bloque Mermaid, imagen o enlace).]
+
+### Decisiones de la base de datos
+
+| # | Pregunta | Decisión | Justificación |
+|---|---|---|---|
+| 1 | Tipo de dato de `price` | | |
+| 2 | Representación de `IN` / `OUT` | | |
+| 3 | Campos opcionales | | |
+| 4 | Generación de UUID | | |
+| 5 | Manejo de `createdAt` / `updatedAt` | | |
+| 6 | Ubicación de llaves foráneas | | |
+| 7 | `onDelete` en Category → Product y Product → InventoryMovement | | |
+| 8 | Validación de reglas: servicio, BD o ambos | | |
+| 9 | Campos únicos | | |
+| 10 | Índices | | |
+| 11 | Stock no negativo a nivel de BD | | |
+| 12 | Convención de nombres en PostgreSQL | | |
+
+### Contratos entre módulos
+
+[Describir qué métodos expone el módulo de productos al módulo de movimientos, y cómo se maneja la transacción al actualizar el stock.]
+
+### Formato de respuestas y errores
+
+[Describir el formato de respuestas paginadas y de errores acordado.]
