@@ -1,9 +1,80 @@
 # Sistema de Gestión de Inventario – API REST
 
-> **Si estás leyendo esto, ya tienes el repositorio clonado.** Empieza por la sección [3. Estado actual del repositorio](#3-estado-actual-del-repositorio) y luego sigue el [4. Plan de trabajo](#4-plan-de-trabajo). No empieces a programar módulos antes de terminar la **Fase 0**.
+> **Si estás leyendo esto, ya tienes el repositorio clonado.** Revisa primero tus tareas en [Asignación de tareas](#asignación-de-tareas). Luego lee la sección [3. Estado actual del repositorio](#3-estado-actual-del-repositorio) y el [4. Plan de trabajo](#4-plan-de-trabajo). No empieces a programar módulos antes de terminar la **Fase 0**.
+
+## Asignación de tareas
+
+| Aprendiz | Rol | Módulos |
+|---|---|---|
+| **Brandon** | Desarrollador A | Categorías y productos |
+| **Alejandra** | Desarrollador B | Movimientos de inventario y reportes |
+
+Marquen cada tarea con `[x]` a medida que la terminen (pueden hacerlo dentro del mismo Pull Request de la tarea). El detalle de cada fase está en [4. Plan de trabajo](#4-plan-de-trabajo).
+
+### Fase 0 – Preparación del entorno
+
+| # | Tarea | Responsable | Rama | Revisa |
+|---|---|---|---|---|
+| 0.1 | Poner en marcha el proyecto localmente ([sección 5](#5-puesta-en-marcha-local), pasos 1 a 4) y ver el "Hello World!" | Ambos | — | — |
+| 0.2 | Crear y publicar la rama `develop` a partir de `main` | Alejandra | `develop` | — |
+| 0.3 | Instalar Prisma (`npx prisma init`), crear el módulo/servicio de Prisma, configurar `ValidationPipe` global, configurar Swagger en `/api/docs` y crear `.env.example` | Brandon | `chore/project-setup` | Alejandra |
+| 0.4 | Crear la plantilla de Pull Requests `.github/pull_request_template.md` con los puntos de la [sección 12](#12-revisión-de-pull-requests) | Alejandra | `chore/pr-template` | Brandon |
+
+- [ ] **Brandon:** 0.1, 0.3 y revisión de 0.4
+- [ ] **Alejandra:** 0.1, 0.2, 0.4 y revisión de 0.3
+
+### Fase 1 – Diseño de la base de datos
+
+| # | Tarea | Responsable | Rama | Revisa |
+|---|---|---|---|---|
+| 1.1 | Reunión de diseño: responder juntos las 14 preguntas de la [sección 8](#8-modelo-de-base-de-datos) | Ambos | — | — |
+| 1.2 | Diagrama entidad-relación | Brandon | `feat/database-schema` | Alejandra |
+| 1.3 | Escribir `prisma/schema.prisma` con los tres modelos, relaciones, restricciones e índices, y generar la migración inicial | Alejandra | `feat/database-schema` | Brandon |
+| 1.4 | Completar la [sección 18](#18-decisiones-de-diseño-del-equipo-completar): equipo, diagrama, decisiones, contratos entre módulos y formato de respuestas y errores | Ambos | `feat/database-schema` | — |
+
+Las tareas 1.2, 1.3 y 1.4 van en la **misma rama** y en un solo Pull Request, con commits de ambos. Es su primera práctica de trabajar los dos sobre la misma rama: hagan `git pull` antes de empezar a trabajar y `git push` al terminar.
+
+- [ ] **Brandon:** 1.1, 1.2, 1.4 y revisión del Pull Request
+- [ ] **Alejandra:** 1.1, 1.3, 1.4
+
+### Fase 2 y 3 – Desarrollo e integración
+
+Respeten **este orden de integración**: así cada uno resuelve un conflicto real en `src/app.module.ts` (ejercicio obligatorio de la [sección 11](#ejercicio-obligatorio-de-conflictos)).
+
+| Orden | Tarea | Responsable | Rama | Revisa |
+|---|---|---|---|---|
+| 1 | Módulo de categorías: CRUD, validaciones, productos de una categoría, Swagger | Brandon | `feature/categories` | Alejandra |
+| 2 | Módulo de movimientos: entradas, salidas, transacción con actualización del stock, historial, filtros y paginación, Swagger. **Al integrar, resolver el conflicto con el módulo de categorías.** | Alejandra | `feature/inventory-movements` | Brandon |
+| 3 | Módulo de productos: CRUD, búsqueda, filtros, paginación, relación con categorías, Swagger. **Al integrar, resolver el conflicto con el módulo de movimientos.** | Brandon | `feature/products` | Alejandra |
+| 4 | Módulo de reportes: `/inventory/summary`, `/inventory/low-stock`, `/inventory/out-of-stock`, Swagger | Alejandra | `feature/inventory-reports` | Brandon |
+
+Pueden trabajar en paralelo; el orden aplica solo a **cuándo se integra** cada Pull Request en `develop`.
+
+> **Alejandra:** para probar movimientos antes de que exista el módulo de productos, puedes crear productos de prueba directamente en la base de datos con `npx prisma studio`.
+
+- [ ] **Brandon:** `feature/categories`, `feature/products`, conflicto en el paso 3, revisión de los PR de Alejandra
+- [ ] **Alejandra:** `feature/inventory-movements`, `feature/inventory-reports`, conflicto en el paso 2, revisión de los PR de Brandon
+
+### Fase 4 – Pruebas y documentación
+
+| # | Tarea | Responsable | Rama | Revisa |
+|---|---|---|---|---|
+| 4.1 | Pruebas unitarias y de integración de categorías y productos (creación, duplicados, eliminar categoría con productos, eliminar producto con movimientos) | Brandon | `test/categories-products` | Alejandra |
+| 4.2 | Pruebas unitarias y de integración de movimientos (entradas, salidas, stock insuficiente, consistencia ante error en la transacción, errores de base de datos) | Alejandra | `test/inventory-movements` | Brandon |
+| 4.3 | Revisar que Swagger documente todos los endpoints y actualizar el README | Ambos | `docs/final-readme` | — |
+
+- [ ] **Brandon:** 4.1, 4.3
+- [ ] **Alejandra:** 4.2, 4.3
+
+### Fase 5 – Producción
+
+Se asignará en una segunda etapa ([sección 14](#14-preparación-para-producción)).
+
+---
 
 ## Tabla de contenido
 
+0. [Asignación de tareas](#asignación-de-tareas)
 1. [Descripción del proyecto](#1-descripción-del-proyecto)
 2. [Tecnologías obligatorias](#2-tecnologías-obligatorias)
 3. [Estado actual del repositorio](#3-estado-actual-del-repositorio)
@@ -626,7 +697,7 @@ Revisen lo que genera: eliminen o ajusten lo que no se use.
 
 El proyecto será desarrollado por dos aprendices.
 
-### Desarrollador A – Productos y categorías
+### Desarrollador A – Productos y categorías (Brandon)
 
 Responsabilidades:
 
@@ -639,7 +710,7 @@ Responsabilidades:
 - Implementar las relaciones entre productos y categorías.
 - Documentar sus endpoints.
 
-### Desarrollador B – Movimientos e inventario
+### Desarrollador B – Movimientos e inventario (Alejandra)
 
 Responsabilidades:
 
@@ -924,8 +995,8 @@ Los desarrolladores tendrán libertad para proponer mejoras técnicas, siempre q
 
 | Rol | Nombre | Usuario de GitHub |
 |---|---|---|
-| Desarrollador A – Productos y categorías | [nombre] | [usuario] |
-| Desarrollador B – Movimientos e inventario | [nombre] | [usuario] |
+| Desarrollador A – Productos y categorías | Brandon | [usuario] |
+| Desarrollador B – Movimientos e inventario | Alejandra | [usuario] |
 
 ### Diagrama entidad-relación
 
