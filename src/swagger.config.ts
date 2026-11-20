@@ -24,6 +24,10 @@ export const API_TAGS = [
     name: 'inventory',
     description: 'Reportes agregados: resumen, stock bajo y sin existencias',
   },
+  {
+    name: 'health',
+    description: 'Healthcheck de conectividad con PostgreSQL',
+  },
 ] as const;
 
 /** Configuración compartida por bootstrap() y por la prueba de Swagger. */
