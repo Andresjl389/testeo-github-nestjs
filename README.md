@@ -16,12 +16,12 @@ Marquen cada tarea con `[x]` a medida que la terminen (pueden hacerlo dentro del
 | # | Tarea | Responsable | Rama | Revisa |
 |---|---|---|---|---|
 | 0.1 | Poner en marcha el proyecto localmente ([sección 5](#5-puesta-en-marcha-local), pasos 1 a 4) y ver el "Hello World!" | Ambos | — | — |
-| 0.2 | Crear y publicar la rama `develop` a partir de `main` | Alejandra | `develop` | — |
+| [x] 0.2 | Crear y publicar la rama `develop` a partir de `main` | Alejandra | `develop` | — |
 | 0.3 | Instalar Prisma (`npx prisma init`), crear el módulo/servicio de Prisma, configurar `ValidationPipe` global, configurar Swagger en `/api/docs` y crear `.env.example` | Brandon | `chore/project-setup` | Alejandra |
-| 0.4 | Crear la plantilla de Pull Requests `.github/pull_request_template.md` con los puntos de la [sección 12](#12-revisión-de-pull-requests) | Alejandra | `chore/pr-template` | Brandon |
+| [x] 0.4 | Crear la plantilla de Pull Requests `.github/pull_request_template.md` con los puntos de la [sección 12](#12-revisión-de-pull-requests) | Alejandra | `chore/pr-template` | Brandon |
 
 - [ ] **Brandon:** 0.1, 0.3 y revisión de 0.4
-- [ ] **Alejandra:** 0.1, 0.2, 0.4 y revisión de 0.3
+- [x] **Alejandra:** 0.1, 0.2, 0.4 y revisión de 0.3
 
 ### Fase 1 – Diseño de la base de datos
 
@@ -53,7 +53,9 @@ Pueden trabajar en paralelo; el orden aplica solo a **cuándo se integra** cada 
 > **Alejandra:** para probar movimientos antes de que exista el módulo de productos, puedes crear productos de prueba directamente en la base de datos con `npx prisma studio`.
 
 - [ ] **Brandon:** `feature/categories`, `feature/products`, conflicto en el paso 3, revisión de los PR de Alejandra
-- [ ] **Alejandra:** `feature/inventory-movements`, `feature/inventory-reports`, conflicto en el paso 2, revisión de los PR de Brandon
+- [x] **Alejandra:** `feature/inventory-movements`
+- [x] **Alejandra:** conflicto en el paso 2 (categorías + movimientos en `src/app.module.ts`)
+- [ ] **Alejandra:** `feature/inventory-reports`, revisión de los PR de Brandon
 
 ### Fase 4 – Pruebas y documentación
 
@@ -989,40 +991,132 @@ Los desarrolladores tendrán libertad para proponer mejoras técnicas, siempre q
 
 ## 18. Decisiones de diseño del equipo (completar)
 
-> Esta sección la completan los desarrolladores durante la Fase 1 y la mantienen actualizada. Reemplacen los textos entre corchetes.
+> Esta sección se completó durante la Fase 1 y se mantiene actualizada.
 
 **Equipo**
 
 | Rol | Nombre | Usuario de GitHub |
 |---|---|---|
-| Desarrollador A – Productos y categorías | Brandon | [usuario] |
-| Desarrollador B – Movimientos e inventario | Alejandra | [usuario] |
+| Desarrollador A – Productos y categorías | Brandon | BrandonMor115 |
+| Desarrollador B – Movimientos e inventario | Alejandra | ghilarybazan11-bot |
 
 ### Diagrama entidad-relación
 
-[Insertar aquí el diagrama (bloque Mermaid, imagen o enlace).]
+```mermaid
+erDiagram
+    CATEGORY   ||..o{ PRODUCT : "tiene (0..N)"
+    PRODUCT    ||..o{ INVENTORY_MOVEMENT : "registra (0..N)"
+
+    CATEGORY {
+        uuid id PK "UUID v4 generado por la app"
+        text name UK "obligatorio y único"
+        text description "opcional (NULL)"
+        timestamp created_at "DEFAULT CURRENT_TIMESTAMP"
+        timestamp updated_at "actualizado por Prisma (@updatedAt)"
+    }
+
+    PRODUCT {
+        uuid id PK "UUID v4 generado por la app"
+        text name "obligatorio (no único)"
+        text description "opcional (NULL)"
+        text sku UK "obligatorio y único"
+        numeric price "Decimal(12,2), mayor que 0"
+        int stock "mayor o igual que 0, DEFAULT 0"
+        int min_stock "mayor o igual que 0, DEFAULT 0"
+        uuid category_id FK "NOT NULL, ON DELETE RESTRICT"
+        timestamp created_at "DEFAULT CURRENT_TIMESTAMP"
+        timestamp updated_at "actualizado por Prisma (@updatedAt)"
+    }
+
+    INVENTORY_MOVEMENT {
+        uuid id PK "UUID v4 generado por la app"
+        uuid product_id FK "NOT NULL, ON DELETE RESTRICT"
+        movement_type type "enum IN/OUT, NOT NULL"
+        int quantity "mayor que 0"
+        text description "opcional (NULL)"
+        timestamp created_at "DEFAULT CURRENT_TIMESTAMP"
+    }
+```
+
+**Cómo leerlo:** `||` significa "exactamente uno" y `o{` significa "cero o muchos"; la línea punteada (`..`) indica una relación **no identificante** (la FK no forma parte de la PK del hijo). Por ejemplo, `CATEGORY ||..o{ PRODUCT` se lee: *una categoría tiene cero o muchos productos, y cada producto pertenece a exactamente una categoría*. Las dos FK son `NOT NULL` y usan `ON DELETE RESTRICT`: no se puede borrar una categoría con productos ni un producto con movimientos. El diagrama también existe en formato DBML en [`docs/er-diagram.dbml`](docs/er-diagram.dbml) para renderizarlo en dbdiagram.io.
 
 ### Decisiones de la base de datos
 
 | # | Pregunta | Decisión | Justificación |
 |---|---|---|---|
-| 1 | Tipo de dato de `price` | | |
-| 2 | Representación de `IN` / `OUT` | | |
-| 3 | Campos opcionales | | |
-| 4 | Generación de UUID | | |
-| 5 | Manejo de `createdAt` / `updatedAt` | | |
-| 6 | Ubicación de llaves foráneas | | |
-| 7 | `onDelete` en Category → Product y Product → InventoryMovement | | |
-| 8 | Validación de reglas: servicio, BD o ambos | | |
-| 9 | Campos únicos | | |
-| 10 | Índices | | |
-| 11 | Stock no negativo a nivel de BD | | |
-| 12 | Convención de nombres en PostgreSQL | | |
+| 1 | Tipo de dato de `price` | `Decimal @db.Decimal(12, 2)` → `numeric(12,2)` en PostgreSQL | `Float` usa IEEE-754: `0.1 + 0.2 !== 0.3`, por lo que acumula errores al sumar precios o calcular el valor del inventario. `numeric` es decimal exacto. Precisión 12 y escala 2 permiten hasta `9.999.999.999,99`. En JSON se serializa con `toString()` para no perder precisión. |
+| 2 | Representación de `IN` / `OUT` | Enum de Prisma `MovementType { IN OUT }`, mapeado a `movement_type` en PostgreSQL | La BD rechaza valores inválidos y TypeScript tiene tipado estático, sin strings mágicos. La alternativa (`String` + `CHECK`) facilita agregar valores nuevos, pero pierde tipado. |
+| 3 | Campos opcionales | `description` opcional en las tres entidades; el resto obligatorio | La descripción es información complementaria. Los ID, FK, precios, cantidades y fechas son necesarios para la integridad; `categoryId` y `productId` nunca son `NULL` para evitar huérfanos. En DTOs se usa `@IsOptional()`. |
+| 4 | Generación de UUID | La aplicación, con `@default(uuid())` + `@db.Uuid` | Todo lo que escribe pasa por Prisma; no dependemos de extensiones de PostgreSQL y las pruebas unitarias pueden simular el ID. Alternativa descartada: `gen_random_uuid()` de la BD, útil solo si hay insertos directos por SQL. |
+| 5 | Manejo de `createdAt` / `updatedAt` | `createdAt @default(now())` (lo llena la BD) y `updatedAt @updatedAt` (lo actualiza Prisma Client). `InventoryMovement` solo tiene `createdAt` | Un movimiento es un evento inmutable (append-only): no se edita ni se elimina, así que `updatedAt` siempre sería igual a `createdAt` y sugeriría que el historial se puede alterar. |
+| 6 | Ubicación de llaves foráneas | `products.category_id` e `inventory_movements.product_id` | La FK va en el lado "muchos". En Prisma se declara en ambos modelos: campo escalar + `@relation(fields: [...], references: [id], onDelete: Restrict)` en el hijo, y campo de lista (`Product[]`, `InventoryMovement[]`) en el padre. |
+| 7 | `onDelete` en las dos relaciones | `Restrict` en Category → Product y en Product → InventoryMovement | `Cascade` borraría el historial de movimientos; `SetNull` dejaría productos huérfanos y además Prisma no lo permite en relaciones obligatorias; `NoAction` es casi equivalente pero se puede diferir. PostgreSQL devuelve `23503` / Prisma `P2003` → HTTP `409`. |
+| 8 | Validación de reglas: servicio, BD o ambos | **Ambos** | El servicio devuelve mensajes claros y códigos HTTP adecuados (`400`, `404`, `409`) y evita consultas innecesarias. La BD garantiza los invariantes ante escrituras directas y condiciones de carrera (dos `OUT` simultáneos). |
+| 9 | Campos únicos | `Category.name`, `Product.sku` y los tres `id` (PK) | Son las reglas de negocio: nombres de categoría no repetidos y SKU único. `Product.name` no es único: dos productos pueden llamarse igual con distinto SKU. |
+| 10 | Índices | `category_id`; `name` (B-tree); `(stock, min_stock)`; `(product_id, created_at)`; `(type, created_at)`; índices GIN trigram sobre `name` y `sku` pendientes para `search` | Corresponden a los filtros de la sección 7. PostgreSQL no indexa automáticamente las FK. El índice B-tree de `name` sirve para igualdad y ordenamiento; un `contains` genera `ILIKE '%texto%'`, que requiere `pg_trgm` y se añadirá cuando se implemente `?search=`. |
+| 11 | Stock no negativo a nivel de BD | `CHECK (stock >= 0)`, `CHECK (min_stock >= 0)`, `CHECK (price > 0)` y `CHECK (quantity > 0)` en la migración inicial | Prisma 7 no permite `CHECK` en `schema.prisma`, así que se agregaron con SQL crudo en `prisma/migrations/20261120000000_init/migration.sql`. La aplicación además usa `updateMany` con `stock >= quantity` en el `where` para ser atómica ante concurrencia. |
+| 12 | Convención de nombres en PostgreSQL | camelCase en TypeScript, snake_case en PostgreSQL con `@map` y `@@map` | `categories`, `products`, `inventory_movements`, `category_id`, `product_id`, `min_stock`, `created_at`, `updated_at`, `movement_type`. Cada lenguaje mantiene su convención. |
+
+Índice trigram para búsquedas (se aplicará cuando se implemente `?search=`; no se incluyó en la migración inicial para no exigir la extensión `pg_trgm` en todos los entornos):
+
+```sql
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX idx_products_name_trgm ON products USING GIN (name gin_trgm_ops);
+CREATE INDEX idx_products_sku_trgm  ON products USING GIN (sku gin_trgm_ops);
+```
 
 ### Contratos entre módulos
 
-[Describir qué métodos expone el módulo de productos al módulo de movimientos, y cómo se maneja la transacción al actualizar el stock.]
+`ProductsModule` exporta `ProductsService`; `InventoryMovementsModule` lo importa (nunca al revés, para evitar dependencia circular). `UpdateProductDto` **no expone `stock`**: los cambios de existencias solo ocurren vía movimientos.
+
+`ProductsService` expone un método de escritura de bajo nivel:
+
+```ts
+async applyMovement(
+  productId: string,
+  movement: { type: MovementType; quantity: number },
+  tx: Prisma.TransactionClient, // obligatorio: evita escribir fuera de la transacción
+): Promise<void>
+```
+
+- `IN`: `tx.product.updateMany({ where: { id: productId }, data: { stock: { increment: quantity } } })`.
+- `OUT`: `tx.product.updateMany({ where: { id: productId, stock: { gte: quantity } }, data: { stock: { decrement: quantity } } })`; si `count === 0`, se distingue entre producto inexistente (`404`) y stock insuficiente (`409`).
+- También se expone `exists(productId, tx?)` para validaciones de lectura.
+
+`InventoryMovementsService` orquesta la transacción:
+
+```ts
+async register(dto: CreateMovementDto) {
+  return this.prisma.$transaction(async (tx) => {
+    await this.products.applyMovement(dto.productId, dto, tx);
+    return tx.inventoryMovement.create({ data: { ...dto } });
+  });
+}
+```
+
+Se eligió llamar al servicio de productos **pasando `tx`** en lugar de usar `this.prisma.product` directamente: conserva el límite entre módulos y mantiene la atomicidad. Si el método usara el cliente global, el `update` ocurriría fuera de la transacción y una falla en `create` dejaría el stock modificado. Cualquier error hace `ROLLBACK`, cumpliendo las reglas 8 y 9 del módulo de movimientos.
 
 ### Formato de respuestas y errores
 
-[Describir el formato de respuestas paginadas y de errores acordado.]
+Propuesta a confirmar en equipo antes de implementar los módulos:
+
+```json
+{
+  "data": [],
+  "total": 42,
+  "page": 1,
+  "limit": 10
+}
+```
+
+```json
+{
+  "statusCode": 409,
+  "message": "No se puede eliminar la categoría porque tiene productos asociados",
+  "error": "Conflict",
+  "timestamp": "2026-11-20T00:00:00.000Z",
+  "path": "/categories/:id"
+}
+```
+
+Códigos acordados: `400` validación de DTO, `404` recurso inexistente, `409` duplicados (`P2002`), FK Restrict (`P2003`) o CHECK violado, stock insuficiente y movimientos sobre producto inexistente. Ambos módulos usan el mismo formato.
