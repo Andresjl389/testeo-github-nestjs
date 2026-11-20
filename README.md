@@ -62,7 +62,7 @@ Pueden trabajar en paralelo; el orden aplica solo a **cuándo se integra** cada 
 
 | # | Tarea | Responsable | Rama | Revisa |
 |---|---|---|---|---|
-| 4.1 | Pruebas unitarias y de integración de categorías y productos (creación, duplicados, eliminar categoría con productos, eliminar producto con movimientos) | Brandon | `test/categories-products` | Alejandra |
+| [x] 4.1 | Pruebas unitarias y de integración de categorías y productos (creación, duplicados, eliminar categoría con productos, eliminar producto con movimientos) | Brandon | `test/categories-products` | Alejandra |
 | 4.2 | Pruebas unitarias y de integración de movimientos (entradas, salidas, stock insuficiente, consistencia ante error en la transacción, errores de base de datos) | Alejandra | `test/inventory-movements` | Brandon |
 | 4.3 | Revisar que Swagger documente todos los endpoints y actualizar el README | Ambos | `docs/final-readme` | — |
 
