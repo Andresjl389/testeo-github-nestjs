@@ -53,3 +53,21 @@ export class LowStockProductEntity {
   @ApiProperty()
   price: number;
 }
+
+/** Formato real de los listados: { data, total, page, limit, totalPages }. */
+export class PaginatedLowStockProductEntity {
+  @ApiProperty({ type: [LowStockProductEntity] })
+  data: LowStockProductEntity[];
+
+  @ApiProperty({ minimum: 0 })
+  total: number;
+
+  @ApiProperty({ minimum: 1 })
+  page: number;
+
+  @ApiProperty({ minimum: 1 })
+  limit: number;
+
+  @ApiProperty({ minimum: 0 })
+  totalPages: number;
+}
