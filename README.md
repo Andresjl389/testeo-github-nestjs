@@ -55,7 +55,8 @@ Pueden trabajar en paralelo; el orden aplica solo a **cuándo se integra** cada 
 - [ ] **Brandon:** `feature/categories`, `feature/products`, conflicto en el paso 3, revisión de los PR de Alejandra
 - [x] **Alejandra:** `feature/inventory-movements`
 - [x] **Alejandra:** conflicto en el paso 2 (categorías + movimientos en `src/app.module.ts`)
-- [ ] **Alejandra:** `feature/inventory-reports`, revisión de los PR de Brandon
+- [x] **Alejandra:** revisión del PR de `feature/products` (paso 3)
+- [ ] **Alejandra:** `feature/inventory-reports`, revisión del PR de `feature/categories`
 
 ### Fase 4 – Pruebas y documentación
 

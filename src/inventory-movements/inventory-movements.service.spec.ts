@@ -6,17 +6,13 @@ import {
 import { Test, TestingModule } from '@nestjs/testing';
 import { MovementType } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { ProductsService } from '../products/products.service';
 import { InventoryMovementsService } from './inventory-movements.service';
 
 describe('InventoryMovementsService', () => {
   let service: InventoryMovementsService;
 
   const tx = {
-    product: {
-      findUnique: jest.fn(),
-      update: jest.fn(),
-      updateMany: jest.fn(),
-    },
     inventoryMovement: {
       create: jest.fn(),
     },
@@ -24,15 +20,15 @@ describe('InventoryMovementsService', () => {
 
   const prisma = {
     $transaction: jest.fn(),
-    product: {
-      findUnique: jest.fn(),
-    },
     inventoryMovement: {
       findMany: jest.fn(),
       findUnique: jest.fn(),
       count: jest.fn(),
-      create: jest.fn(),
     },
+  };
+
+  const products = {
+    applyMovement: jest.fn(),
   };
 
   const movement = {
@@ -49,33 +45,30 @@ describe('InventoryMovementsService', () => {
     prisma.$transaction.mockImplementation((callback: unknown) => {
       return (callback as (client: typeof tx) => Promise<unknown>)(tx);
     });
-    tx.product.findUnique.mockResolvedValue({ id: 'product-1', stock: 10 });
-    tx.product.updateMany.mockResolvedValue({ count: 1 });
-    tx.product.update.mockResolvedValue({ id: 'product-1', stock: 15 });
+    products.applyMovement.mockResolvedValue(undefined);
     tx.inventoryMovement.create.mockResolvedValue(movement);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         InventoryMovementsService,
         { provide: PrismaService, useValue: prisma },
+        { provide: ProductsService, useValue: products },
       ],
     }).compile();
 
     service = module.get<InventoryMovementsService>(InventoryMovementsService);
   });
 
-  it('registra una entrada e incrementa el stock dentro de la transacción', async () => {
-    const result = await service.create({
+  it('registra una entrada delegando el stock a ProductsService dentro de la transacción', async () => {
+    const dto = {
       productId: 'product-1',
       type: MovementType.IN,
       quantity: 5,
-    });
+    };
+    const result = await service.create(dto);
 
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
-    expect(tx.product.update).toHaveBeenCalledWith({
-      where: { id: 'product-1' },
-      data: { stock: { increment: 5 } },
-    });
+    expect(products.applyMovement).toHaveBeenCalledWith('product-1', dto, tx);
     expect(tx.inventoryMovement.create).toHaveBeenCalledWith({
       data: {
         productId: 'product-1',
@@ -87,25 +80,23 @@ describe('InventoryMovementsService', () => {
     expect(result).toEqual(movement);
   });
 
-  it('registra una salida y decrementa el stock de forma atómica', async () => {
-    const result = await service.create({
+  it('registra una salida pasando el tipo OUT a ProductsService', async () => {
+    const dto = {
       productId: 'product-1',
       type: MovementType.OUT,
       quantity: 4,
       description: 'Venta',
-    });
+    };
+    const result = await service.create(dto);
 
-    expect(tx.product.update).not.toHaveBeenCalled();
-    expect(tx.product.updateMany).toHaveBeenCalledWith({
-      where: { id: 'product-1', stock: { gte: 4 } },
-      data: { stock: { decrement: 4 } },
-    });
+    expect(products.applyMovement).toHaveBeenCalledWith('product-1', dto, tx);
     expect(result).toEqual(movement);
   });
 
   it('rechaza una salida con stock insuficiente sin registrar el movimiento', async () => {
-    tx.product.updateMany.mockResolvedValue({ count: 0 });
-    tx.product.findUnique.mockResolvedValue({ id: 'product-1' });
+    products.applyMovement.mockRejectedValue(
+      new ConflictException('Stock insuficiente'),
+    );
 
     await expect(
       service.create({
@@ -119,7 +110,9 @@ describe('InventoryMovementsService', () => {
   });
 
   it('rechaza un movimiento de un producto inexistente', async () => {
-    tx.product.findUnique.mockResolvedValue(null);
+    products.applyMovement.mockRejectedValue(
+      new NotFoundException('Producto no encontrado'),
+    );
 
     await expect(
       service.create({
@@ -133,7 +126,7 @@ describe('InventoryMovementsService', () => {
   });
 
   it('no deja un movimiento parcial si falla la actualización de stock', async () => {
-    tx.product.update.mockRejectedValue(new Error('DB down'));
+    products.applyMovement.mockRejectedValue(new Error('DB down'));
 
     await expect(
       service.create({
@@ -143,7 +136,7 @@ describe('InventoryMovementsService', () => {
       }),
     ).rejects.toBeInstanceOf(InternalServerErrorException);
 
-    // El INSERT se ejecuta dentro del mismo callback: si el update falla,
+    // El INSERT está dentro del mismo callback: si falla el update,
     // Prisma revierte la transacción y este INSERT nunca se ejecuta.
     expect(tx.inventoryMovement.create).not.toHaveBeenCalled();
   });

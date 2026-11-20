@@ -1,16 +1,12 @@
 import {
-  ConflictException,
   HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  MovementType,
-  Prisma,
-  type InventoryMovement,
-} from '../generated/prisma/client';
+import { Prisma, type InventoryMovement } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { ProductsService } from '../products/products.service';
 import {
   paginate,
   PaginatedResult,
@@ -26,53 +22,20 @@ const PRODUCT_PREVIEW = {
 
 @Injectable()
 export class InventoryMovementsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly products: ProductsService,
+  ) {}
 
   /**
    * Registra un movimiento y actualiza el stock en una única transacción.
-   * La salida usa un updateMany condicional para que dos salidas concurrentes
-   * no puedan dejar el stock por debajo de cero.
+   * La escritura de stock la hace ProductsService.applyMovement pasando `tx`:
+   * así se respeta el contrato de la sección 18 y no se duplica la lógica.
    */
   async create(dto: CreateInventoryMovementDto): Promise<InventoryMovement> {
     return this.run(() =>
       this.prisma.$transaction(async (tx) => {
-        const product = await tx.product.findUnique({
-          where: { id: dto.productId },
-          select: { id: true, stock: true },
-        });
-
-        if (!product) {
-          throw new NotFoundException(
-            `Producto con id ${dto.productId} no encontrado`,
-          );
-        }
-
-        if (dto.type === MovementType.OUT) {
-          const updated = await tx.product.updateMany({
-            where: { id: dto.productId, stock: { gte: dto.quantity } },
-            data: { stock: { decrement: dto.quantity } },
-          });
-
-          if (updated.count === 0) {
-            const current = await tx.product.findUnique({
-              where: { id: dto.productId },
-              select: { id: true },
-            });
-            if (!current) {
-              throw new NotFoundException(
-                `Producto con id ${dto.productId} no encontrado`,
-              );
-            }
-            throw new ConflictException(
-              `Stock insuficiente para el producto ${dto.productId}`,
-            );
-          }
-        } else {
-          await tx.product.update({
-            where: { id: dto.productId },
-            data: { stock: { increment: dto.quantity } },
-          });
-        }
+        await this.products.applyMovement(dto.productId, dto, tx);
 
         return tx.inventoryMovement.create({
           data: {
