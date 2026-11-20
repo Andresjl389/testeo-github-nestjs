@@ -1,6 +1,6 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { MovementType } from '../generated/prisma/client';
+import { MovementType, Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProductsService } from './products.service';
 
@@ -61,17 +61,18 @@ describe('ProductsService', () => {
 
     expect(result.price).toBe('49.90');
     expect(result.category).toEqual(category);
-    expect(prismaMock.product.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          name: 'Teclado mecánico',
-          sku: 'TEC-001',
-          stock: 0,
-          minStock: 0,
-          categoryId: category.id,
-        }),
-      }),
-    );
+    expect(prismaMock.product.create).toHaveBeenCalledWith({
+      data: {
+        name: 'Teclado mecánico',
+        description: null,
+        sku: 'TEC-001',
+        price: new Prisma.Decimal(49.9),
+        stock: 0,
+        minStock: 0,
+        categoryId: category.id,
+      },
+      include: { category: { select: { id: true, name: true } } },
+    });
   });
 
   it('devuelve 409 si el SKU ya existe (P2002)', async () => {
