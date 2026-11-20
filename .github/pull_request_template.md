@@ -48,7 +48,21 @@
 
 ## Checklist del revisor
 
-- [ ] Código legible y sin funcionalidades duplicadas
-- [ ] Lógica de negocio y validaciones correctas
-- [ ] Cambios compatibles con el resto del sistema
-- [ ] Probé la rama localmente (migraciones incluidas)
+- [ ] El código es legible
+- [ ] La lógica de negocio es correcta
+- [ ] Las validaciones están implementadas
+- [ ] No se han introducido errores
+- [ ] No se han duplicado funcionalidades
+- [ ] Los cambios son compatibles con el resto del sistema
+- [ ] Descargué la rama y la ejecuté localmente (no solo leí el código en GitHub):
+
+```bash
+git fetch origin
+git checkout feature/nombre-de-la-rama
+npm install
+npx prisma migrate dev
+npm run start:dev
+```
+
+- [ ] Dejé comentarios cuando encontré errores o aspectos a corregir
+- [ ] Aprobé el PR solo después de verificar todo lo anterior
