@@ -64,9 +64,9 @@ Pueden trabajar en paralelo; el orden aplica solo a **cuándo se integra** cada 
 |---|---|---|---|---|
 | [x] 4.1 | Pruebas unitarias y de integración de categorías y productos (creación, duplicados, eliminar categoría con productos, eliminar producto con movimientos) | Brandon | `test/categories-products` | Alejandra |
 | 4.2 | Pruebas unitarias y de integración de movimientos (entradas, salidas, stock insuficiente, consistencia ante error en la transacción, errores de base de datos) | Alejandra | `test/inventory-movements` | Brandon |
-| 4.3 | Revisar que Swagger documente todos los endpoints y actualizar el README | Ambos | `docs/final-readme` | — |
+| [x] 4.3 | Revisar que Swagger documente todos los endpoints y actualizar el README | Ambos | `docs/final-readme` | — |
 
-- [ ] **Brandon:** 4.1, 4.3
+- [x] **Brandon:** 4.1, 4.3
 - [x] **Alejandra:** 4.2 (`test/inventory-movements`)
 - [ ] **Alejandra:** 4.3
 
@@ -97,6 +97,7 @@ Se asignará en una segunda etapa ([sección 14](#14-preparación-para-producci�
 16. [Criterios de evaluación](#16-criterios-de-evaluación)
 17. [Consideraciones finales](#17-consideraciones-finales)
 18. [Decisiones de diseño del equipo (completar)](#18-decisiones-de-diseño-del-equipo-completar)
+19. [Swagger y endpoints implementados](#19-swagger-y-endpoints-implementados)
 
 ---
 
@@ -148,21 +149,21 @@ No se requiere desarrollar frontend. Toda la interacción con el sistema deberá
 
 ## 3. Estado actual del repositorio
 
-El repositorio contiene **únicamente el proyecto base que genera NestJS** (`nest new`). Esto es lo que ya existe y lo que les toca construir:
+El repositorio partió del proyecto base de NestJS (`nest new`) y ya incluye las funcionalidades de las fases 1 a 4. Estado actual:
 
 | Elemento | Estado |
 |---|---|
 | Proyecto NestJS con TypeScript, ESLint, Prettier y Jest | ✅ Ya existe |
-| `src/main.ts`, `src/app.module.ts`, `AppController`, `AppService` | ✅ Ya existe (ejemplo "Hello World") |
+| `src/main.ts`, `src/app.module.ts`, `AppController`, `AppService` | ✅ Existe y está documentado en Swagger |
 | `.gitignore` que excluye `.env` y `node_modules` | ✅ Ya existe |
-| Rama `main` | ✅ Ya existe |
-| Rama `develop` | ❌ Deben crearla (Fase 0) |
-| Prisma (instalación, `schema.prisma`, migraciones) | ❌ Deben configurarlo |
-| Servicio/módulo de Prisma para NestJS | ❌ Deben crearlo |
-| Validación de datos (DTOs con `class-validator`) | ❌ Deben configurarlo |
-| Swagger en `/api/docs` | ❌ Deben configurarlo |
-| Archivo `.env.example` | ❌ Deben crearlo |
-| Módulos de categorías, productos, movimientos y reportes | ❌ Deben crearlos |
+| Ramas `main` y `develop` | ✅ Creadas (Fase 0) |
+| Prisma (`schema.prisma`, dos migraciones y `migration_lock.toml`) | ✅ Configurado (Fase 1) |
+| Servicio/módulo de Prisma para NestJS | ✅ Creado |
+| Validación de datos (DTOs con `class-validator`) | ✅ Configurada con `ValidationPipe` global |
+| Swagger en `/api/docs` | ✅ Configurado y verificado automáticamente (sección [19](#19-swagger-y-endpoints-implementados)) |
+| Archivo `.env.example` | ✅ Creado |
+| Módulos de categorías, productos, movimientos y reportes | ✅ Implementados e integrados en `develop` |
+| Pruebas unitarias y de integración | ✅ Implementadas (sección [13](#13-pruebas)) |
 
 Scripts disponibles en `package.json`:
 
@@ -502,7 +503,7 @@ Esta información deberá obtenerse mediante consultas a la base de datos, evita
 
 ## 7. Endpoints esperados
 
-Los siguientes endpoints son una guía funcional. Los desarrolladores podrán proponer ajustes siempre que mantengan las funcionalidades solicitadas.
+Los siguientes endpoints son una guía funcional. Los desarrolladores podrán proponer ajustes siempre que mantengan las funcionalidades solicitadas. El listado **realmente implementado**, con sus códigos de respuesta y su verificación Swagger, está en la [sección 19](#19-swagger-y-endpoints-implementados).
 
 ### Categorías
 
@@ -566,12 +567,12 @@ Los listados deberán permitir filtrar por:
 
 ### Formato de respuestas y errores
 
-Acuerden entre los dos, antes de empezar los módulos, un formato común para:
+Formato común acordado y aplicado por todos los módulos:
 
-- Respuestas paginadas (por ejemplo: `data`, `total`, `page`, `limit`).
-- Errores (códigos HTTP a usar: `400`, `404`, `409`, etc., y estructura del mensaje).
+- Respuestas paginadas: `data`, `total`, `page`, `limit`, `totalPages`.
+- Errores: `statusCode`, `message`, `error`, `timestamp`, `path`, con códigos `400`, `404`, `409`, etc.
 
-Documenten el acuerdo en la sección [18](#18-decisiones-de-diseño-del-equipo-completar). Ambos módulos deben responder de la misma forma.
+El acuerdo completo quedó documentado en la sección [18](#18-decisiones-de-diseño-del-equipo-completar).
 
 ---
 
@@ -907,7 +908,9 @@ Como mínimo, se deberá probar:
 Se deberán incluir pruebas unitarias y pruebas de integración para las reglas de negocio más importantes.
 
 - **Unitarias** (`src/**/*.spec.ts`, se ejecutan con `npm run test`): prueban servicios aislados, simulando (mock) el acceso a la base de datos.
-- **Integración** (`test/*.e2e-spec.ts`, se ejecutan con `npm run test:e2e`): prueban los endpoints contra una base de datos real. Se recomienda usar una base de datos separada para pruebas (por ejemplo `inventory_management_test`) para no borrar sus datos de desarrollo.
+- **Integración** (`test/*.e2e-spec.ts`, se ejecutan con `npm run test:e2e`): prueban los endpoints por HTTP (controladores, pipes, DTOs y servicios reales). `test/categories-products.e2e-spec.ts` usa un doble en memoria de `PrismaService` que replica `UNIQUE` y `ON DELETE RESTRICT`, así que no depende de PostgreSQL. `test/swagger.e2e-spec.ts` genera el documento OpenAPI y comprueba que cubra todas las rutas. `test/inventory-movements.e2e-spec.ts` se ejecuta solo cuando se define `TEST_DATABASE_URL`; sin esa variable sus 8 pruebas aparecen como omitidas. Para ejecutarlas, use una base separada (`inventory_management_test`) para no borrar sus datos de desarrollo.
+
+Estado verificado en `develop`: `npm run build`, `npm run test` (30 pruebas) y `npm run test:e2e` (12 pruebas en verde: 7 de integración de categorías/productos, 4 de Swagger y la del `AppController`; 8 pruebas de movimientos quedan omitidas al no definir `TEST_DATABASE_URL`).
 
 ---
 
@@ -1100,7 +1103,7 @@ Se eligió llamar al servicio de productos **pasando `tx`** en lugar de usar `th
 
 ### Formato de respuestas y errores
 
-Propuesta a confirmar en equipo antes de implementar los módulos:
+Formato acordado por el equipo y usado por todos los módulos:
 
 ```json
 {
@@ -1122,3 +1125,68 @@ Propuesta a confirmar en equipo antes de implementar los módulos:
 ```
 
 Códigos acordados: `400` validación de DTO, `404` recurso inexistente, `409` duplicados (`P2002`), FK Restrict (`P2003`) o CHECK violado, stock insuficiente y movimientos sobre producto inexistente. Ambos módulos usan el mismo formato.
+
+---
+
+## 19. Swagger y endpoints implementados
+
+### Cómo acceder
+
+```bash
+npm run start:dev
+```
+
+Abre `http://localhost:3000/api/docs`. La configuración (título, descripción, versión, servidor y los 5 tags) está centralizada en `src/swagger.config.ts` y la usa `src/main.ts`.
+
+### Cobertura de documentación
+
+| Tag | Método | Ruta | Éxito | Errores documentados |
+|---|---|---|---|---|
+| app | GET | `/` | 200 | — |
+| categories | POST | `/categories` | 201 | 400, 409 |
+| categories | GET | `/categories` | 200 | — |
+| categories | GET | `/categories/{id}` | 200 | 400, 404 |
+| categories | GET | `/categories/{id}/products` | 200 | 400, 404 |
+| categories | PATCH | `/categories/{id}` | 200 | 400, 404, 409 |
+| categories | DELETE | `/categories/{id}` | 204 | 400, 404, 409 |
+| products | POST | `/products` | 201 | 400, 404, 409 |
+| products | GET | `/products` | 200 | 400 |
+| products | GET | `/products/{id}` | 200 | 400, 404 |
+| products | PATCH | `/products/{id}` | 200 | 400, 404, 409 |
+| products | DELETE | `/products/{id}` | 204 | 400, 404, 409 |
+| inventory-movements | POST | `/inventory-movements` | 201 | 400, 404, 409 |
+| inventory-movements | GET | `/inventory-movements` | 200 | 400 |
+| inventory-movements | GET | `/inventory-movements/product/{productId}` | 200 | 400, 404 |
+| inventory-movements | GET | `/inventory-movements/{id}` | 200 | 400, 404 |
+| inventory | GET | `/inventory/summary` | 200 | — |
+| inventory | GET | `/inventory/low-stock` | 200 | 400 |
+| inventory | GET | `/inventory/out-of-stock` | 200 | 400 |
+
+**Total: 12 rutas y 19 operaciones**, todas con `@ApiTags`, `@ApiOperation` y al menos una respuesta 2xx documentada.
+
+Parámetros de consulta relevantes:
+
+- `GET /products`: `page`, `limit`, `search`, `categoryId`, `lowStock`.
+- `GET /inventory-movements` y `GET /inventory-movements/product/{productId}`: `page`, `limit`, `type`, `productId`, `startDate`, `endDate`.
+- `GET /inventory/low-stock` y `GET /inventory/out-of-stock`: `page`, `limit`.
+
+Todos los `id` y `productId` de ruta usan `ParseUUIDPipe`, por lo que Swagger los muestra con `format: uuid` y responde `400` si el valor no es válido.
+
+### Verificación automática
+
+`test/swagger.e2e-spec.ts` genera el documento OpenAPI con la misma configuración que `main.ts` y comprueba que:
+
+1. El título, la versión y la descripción sean los esperados.
+2. Estén los 5 tags y las 12 rutas / 19 operaciones.
+3. Cada operación tenga `summary`, `tags` y una respuesta `2xx`.
+4. Estén los esquemas de entidades y DTOs, y que los parámetros de ruta sean UUID.
+
+Para ejecutar toda la verificación:
+
+```bash
+npm run build
+npm run test
+npm run test:e2e
+```
+
+Evidencia sugerida para el PR: captura de `/api/docs` mostrando los tags `app`, `categories`, `products`, `inventory-movements` e `inventory`, y el resultado de `npm run test:e2e` con las 12 pruebas en verde (más 8 omitidas por no definir `TEST_DATABASE_URL`).
