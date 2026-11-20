@@ -21,30 +21,31 @@ enum MovementType {
 
 model Category {
   id          String    @id @default(uuid()) @db.Uuid
-  name        String    @unique
-  description String?
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  name        String    @unique @db.VarChar(120)
+  description String?   @db.Text
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
   products    Product[]
 
   @@map("categories")
 }
 
 model Product {
-  id          String   @id @default(uuid()) @db.Uuid
-  name        String
-  description String?
-  sku         String   @unique
-  price       Decimal  @db.Decimal(12, 2)
-  stock       Int      @default(0)
-  minStock    Int      @default(0) @map("min_stock")
-  categoryId  String   @map("category_id") @db.Uuid
-  category    Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  id          String               @id @default(uuid()) @db.Uuid
+  name        String               @db.VarChar(200)
+  description String?              @db.Text
+  sku         String               @unique @db.VarChar(100)
+  price       Decimal              @db.Decimal(12, 2)
+  stock       Int                  @default(0)
+  minStock    Int                  @default(0) @map("min_stock")
+  categoryId  String               @map("category_id") @db.Uuid
+  category    Category             @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   movements   InventoryMovement[]
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdAt   DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@index([categoryId])
+  @@index([name])
   @@index([stock, minStock])
   @@map("products")
 }
@@ -55,8 +56,8 @@ model InventoryMovement {
   product     Product      @relation(fields: [productId], references: [id], onDelete: Restrict)
   type        MovementType
   quantity    Int
-  description String?
-  createdAt   DateTime     @default(now()) @map("created_at")
+  description String?      @db.VarChar(255)
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@index([productId, createdAt])
   @@index([type, createdAt])
