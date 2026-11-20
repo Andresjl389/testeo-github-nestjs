@@ -53,7 +53,9 @@ Pueden trabajar en paralelo; el orden aplica solo a **cuándo se integra** cada 
 > **Alejandra:** para probar movimientos antes de que exista el módulo de productos, puedes crear productos de prueba directamente en la base de datos con `npx prisma studio`.
 
 - [ ] **Brandon:** `feature/categories`, `feature/products`, conflicto en el paso 3, revisión de los PR de Alejandra
-- [ ] **Alejandra:** `feature/inventory-movements`, `feature/inventory-reports`, conflicto en el paso 2, revisión de los PR de Brandon
+- [x] **Alejandra:** `feature/inventory-movements`
+- [x] **Alejandra:** conflicto en el paso 2 (categorías + movimientos en `src/app.module.ts`)
+- [ ] **Alejandra:** `feature/inventory-reports`, revisión de los PR de Brandon
 
 ### Fase 4 – Pruebas y documentación
 
