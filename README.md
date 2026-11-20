@@ -1002,37 +1002,41 @@ Los desarrolladores tendrán libertad para proponer mejoras técnicas, siempre q
 
 ```mermaid
 erDiagram
-    CATEGORY ||--o{ PRODUCT : "tiene"
-    PRODUCT  ||--o{ INVENTORY_MOVEMENT : "registra"
+    CATEGORY   ||..o{ PRODUCT : "tiene (0..N)"
+    PRODUCT    ||..o{ INVENTORY_MOVEMENT : "registra (0..N)"
 
     CATEGORY {
-        uuid id PK
-        text name UK
-        text description
-        timestamp created_at
-        timestamp updated_at
+        uuid id PK "UUID v4 generado por la app"
+        text name UK "obligatorio y único"
+        text description "opcional (NULL)"
+        timestamp created_at "DEFAULT CURRENT_TIMESTAMP"
+        timestamp updated_at "actualizado por Prisma (@updatedAt)"
     }
+
     PRODUCT {
-        uuid id PK
-        text name
-        text description
-        text sku UK
-        numeric price
-        int stock
-        int min_stock
-        uuid category_id FK
-        timestamp created_at
-        timestamp updated_at
+        uuid id PK "UUID v4 generado por la app"
+        text name "obligatorio (no único)"
+        text description "opcional (NULL)"
+        text sku UK "obligatorio y único"
+        numeric price "Decimal(12,2), mayor que 0"
+        int stock "mayor o igual que 0, DEFAULT 0"
+        int min_stock "mayor o igual que 0, DEFAULT 0"
+        uuid category_id FK "NOT NULL, ON DELETE RESTRICT"
+        timestamp created_at "DEFAULT CURRENT_TIMESTAMP"
+        timestamp updated_at "actualizado por Prisma (@updatedAt)"
     }
+
     INVENTORY_MOVEMENT {
-        uuid id PK
-        uuid product_id FK
-        movement_type type
-        int quantity
-        text description
-        timestamp created_at
+        uuid id PK "UUID v4 generado por la app"
+        uuid product_id FK "NOT NULL, ON DELETE RESTRICT"
+        movement_type type "enum IN/OUT, NOT NULL"
+        int quantity "mayor que 0"
+        text description "opcional (NULL)"
+        timestamp created_at "DEFAULT CURRENT_TIMESTAMP"
     }
 ```
+
+**Cómo leerlo:** `||` significa "exactamente uno" y `o{` significa "cero o muchos"; la línea punteada (`..`) indica una relación **no identificante** (la FK no forma parte de la PK del hijo). Por ejemplo, `CATEGORY ||..o{ PRODUCT` se lee: *una categoría tiene cero o muchos productos, y cada producto pertenece a exactamente una categoría*. Las dos FK son `NOT NULL` y usan `ON DELETE RESTRICT`: no se puede borrar una categoría con productos ni un producto con movimientos. El diagrama también existe en formato DBML en [`docs/er-diagram.dbml`](docs/er-diagram.dbml) para renderizarlo en dbdiagram.io.
 
 ### Decisiones de la base de datos
 
