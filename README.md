@@ -16,12 +16,12 @@ Marquen cada tarea con `[x]` a medida que la terminen (pueden hacerlo dentro del
 | # | Tarea | Responsable | Rama | Revisa |
 |---|---|---|---|---|
 | 0.1 | Poner en marcha el proyecto localmente ([sección 5](#5-puesta-en-marcha-local), pasos 1 a 4) y ver el "Hello World!" | Ambos | — | — |
-| 0.2 | Crear y publicar la rama `develop` a partir de `main` | Alejandra | `develop` | — |
+| [x] 0.2 | Crear y publicar la rama `develop` a partir de `main` | Alejandra | `develop` | — |
 | 0.3 | Instalar Prisma (`npx prisma init`), crear el módulo/servicio de Prisma, configurar `ValidationPipe` global, configurar Swagger en `/api/docs` y crear `.env.example` | Brandon | `chore/project-setup` | Alejandra |
-| 0.4 | Crear la plantilla de Pull Requests `.github/pull_request_template.md` con los puntos de la [sección 12](#12-revisión-de-pull-requests) | Alejandra | `chore/pr-template` | Brandon |
+| [x] 0.4 | Crear la plantilla de Pull Requests `.github/pull_request_template.md` con los puntos de la [sección 12](#12-revisión-de-pull-requests) | Alejandra | `chore/pr-template` | Brandon |
 
 - [ ] **Brandon:** 0.1, 0.3 y revisión de 0.4
-- [ ] **Alejandra:** 0.1, 0.2, 0.4 y revisión de 0.3
+- [x] **Alejandra:** 0.1, 0.2, 0.4 y revisión de 0.3
 
 ### Fase 1 – Diseño de la base de datos
 
