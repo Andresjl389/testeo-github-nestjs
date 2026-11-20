@@ -11,7 +11,10 @@ import {
   type InventoryMovement,
 } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { paginate, PaginatedResult } from '../common/dto/paginated-result.interface';
+import {
+  paginate,
+  PaginatedResult,
+} from '../common/dto/paginated-result.interface';
 import { CreateInventoryMovementDto } from './dto/create-inventory-movement.dto';
 import { QueryInventoryMovementsDto } from './dto/query-inventory-movements.dto';
 
@@ -112,9 +115,7 @@ export class InventoryMovementsService {
         include: { product: { select: PRODUCT_PREVIEW } },
       });
       if (!movement) {
-        throw new NotFoundException(
-          `Movimiento con id ${id} no encontrado`,
-        );
+        throw new NotFoundException(`Movimiento con id ${id} no encontrado`);
       }
       return movement;
     });

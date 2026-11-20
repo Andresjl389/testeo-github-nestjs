@@ -4,7 +4,11 @@ import { IsInt, IsOptional, Max, Min } from 'class-validator';
 
 /** Parámetros de paginación compartidos por todos los listados. */
 export class PaginationQueryDto {
-  @ApiPropertyOptional({ minimum: 1, default: 1, description: 'Página (1-based)' })
+  @ApiPropertyOptional({
+    minimum: 1,
+    default: 1,
+    description: 'Página (1-based)',
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()

@@ -1,4 +1,8 @@
-import { ConflictException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { MovementType } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -145,7 +149,9 @@ describe('InventoryMovementsService', () => {
   });
 
   it('traduce errores inesperados de base de datos a 500', async () => {
-    prisma.inventoryMovement.findMany.mockRejectedValue(new Error('connection lost'));
+    prisma.inventoryMovement.findMany.mockRejectedValue(
+      new Error('connection lost'),
+    );
 
     await expect(
       service.findAll({ page: 1, limit: 10 }),
@@ -168,14 +174,16 @@ describe('InventoryMovementsService', () => {
     expect(prisma.inventoryMovement.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ skip: 10, take: 10 }),
     );
-    expect(prisma.inventoryMovement.count).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          type: MovementType.OUT,
-          productId: 'product-1',
-        }),
-      }),
-    );
+    expect(prisma.inventoryMovement.count).toHaveBeenCalledWith({
+      where: {
+        type: MovementType.OUT,
+        productId: 'product-1',
+        createdAt: {
+          gte: new Date('2026-01-01T00:00:00.000Z'),
+          lte: new Date('2026-01-31T23:59:59.999Z'),
+        },
+      },
+    });
     expect(result).toEqual({
       data: [movement],
       total: 21,

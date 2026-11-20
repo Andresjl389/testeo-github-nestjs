@@ -47,7 +47,8 @@ export class InventoryMovementsController {
 
   @Get()
   @ApiOperation({
-    summary: 'Listar movimientos (filtros: type, productId, startDate, endDate)',
+    summary:
+      'Listar movimientos (filtros: type, productId, startDate, endDate)',
   })
   @ApiOkResponse({ type: PaginatedInventoryMovementEntity })
   @ApiBadRequestResponse({ description: 'Parámetros de consulta inválidos' })
@@ -57,7 +58,8 @@ export class InventoryMovementsController {
 
   @Get('product/:productId')
   @ApiOperation({
-    summary: 'Historial paginado de movimientos de un producto (admite los mismos filtros)',
+    summary:
+      'Historial paginado de movimientos de un producto (admite los mismos filtros)',
   })
   @ApiParam({ name: 'productId', format: 'uuid' })
   @ApiOkResponse({ type: PaginatedInventoryMovementEntity })

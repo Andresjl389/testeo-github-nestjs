@@ -14,12 +14,18 @@ export class QueryInventoryMovementsDto extends PaginationQueryDto {
   @IsUUID('4')
   productId?: string;
 
-  @ApiPropertyOptional({ format: 'date-time', description: 'Fecha inicial (ISO 8601)' })
+  @ApiPropertyOptional({
+    format: 'date-time',
+    description: 'Fecha inicial (ISO 8601)',
+  })
   @IsOptional()
   @IsDateString()
   startDate?: string;
 
-  @ApiPropertyOptional({ format: 'date-time', description: 'Fecha final (ISO 8601)' })
+  @ApiPropertyOptional({
+    format: 'date-time',
+    description: 'Fecha final (ISO 8601)',
+  })
   @IsOptional()
   @IsDateString()
   endDate?: string;
