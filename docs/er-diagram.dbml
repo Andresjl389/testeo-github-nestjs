@@ -1,0 +1,42 @@
+// Diagrama entidad-relación - Fase 1.2
+// Renderizar en https://dbdiagram.io/ (pegar este archivo como DBML)
+
+Project inventory_management {
+  database_type: 'PostgreSQL'
+  Note: 'Las FK son NOT NULL y usan ON DELETE RESTRICT. Los id son UUID generados por la aplicacion.'
+}
+
+Enum movement_type {
+  IN
+  OUT
+}
+
+Table categories {
+  id uuid [pk, note: 'UUID v4, @default(uuid())']
+  name varchar [not null, unique, note: 'No se permiten nombres duplicados']
+  description varchar [null, note: 'Opcional']
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, note: '@updatedAt de Prisma']
+}
+
+Table products {
+  id uuid [pk, note: 'UUID v4, @default(uuid())']
+  name varchar [not null, note: 'No es unico']
+  description varchar [null, note: 'Opcional']
+  sku varchar [not null, unique]
+  price decimal(12,2) [not null, note: 'Decimal exacto, mayor que 0']
+  stock int [not null, default: 0, note: 'CHECK (stock >= 0)']
+  min_stock int [not null, default: 0, note: 'CHECK (min_stock >= 0)']
+  category_id uuid [not null, ref: > categories.id, note: 'ON DELETE RESTRICT']
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, note: '@updatedAt de Prisma']
+}
+
+Table inventory_movements {
+  id uuid [pk, note: 'UUID v4, @default(uuid())']
+  product_id uuid [not null, ref: > products.id, note: 'ON DELETE RESTRICT']
+  type movement_type [not null]
+  quantity int [not null, note: 'CHECK (quantity > 0)']
+  description varchar [null, note: 'Opcional']
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`, note: 'No hay updatedAt: es un evento inmutable']
+}
