@@ -25,6 +25,7 @@ describe('Swagger (documentación completa)', () => {
     '/inventory/summary': ['get'],
     '/inventory/low-stock': ['get'],
     '/inventory/out-of-stock': ['get'],
+    '/health': ['get'],
   };
 
   beforeAll(async () => {
@@ -44,7 +45,7 @@ describe('Swagger (documentación completa)', () => {
     await app.close();
   });
 
-  it('expone metadatos y los 5 tags del proyecto', () => {
+  it('expone metadatos y los 6 tags del proyecto', () => {
     expect(document.info.title).toBe('Inventory Management API');
     expect(document.info.version).toBe('1.0');
     expect(document.info.description).toContain('data, total, page, limit');
@@ -53,7 +54,7 @@ describe('Swagger (documentación completa)', () => {
     );
   });
 
-  it('documenta las 12 rutas y las 19 operaciones esperadas', () => {
+  it('documenta las 13 rutas y las 20 operaciones esperadas', () => {
     expect(Object.keys(document.paths).sort()).toEqual(
       Object.keys(expectedOperations).sort(),
     );
@@ -66,7 +67,7 @@ describe('Swagger (documentación completa)', () => {
         operations += 1;
       }
     }
-    expect(operations).toBe(19);
+    expect(operations).toBe(20);
   });
 
   it('toda operación tiene summary, tags y una respuesta 2xx', () => {
@@ -97,6 +98,7 @@ describe('Swagger (documentación completa)', () => {
       'ProductEntity',
       'InventoryMovementEntity',
       'InventorySummaryEntity',
+      'HealthEntity',
       'PaginatedProductEntity',
     ]) {
       expect(schemas).toContain(schema);

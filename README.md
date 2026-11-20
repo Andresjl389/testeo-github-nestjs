@@ -72,7 +72,7 @@ Pueden trabajar en paralelo; el orden aplica solo a **cuándo se integra** cada 
 
 ### Fase 5 – Producción
 
-Se asignará en una segunda etapa ([sección 14](#14-preparación-para-producción)).
+La preparación base del backend quedó implementada en la rama `chore/production-readiness`. El despliegue efectivo queda pendiente hasta definir la plataforma de alojamiento; detalles y checklist en la [sección 14](#14-preparación-para-producción).
 
 ---
 
@@ -910,38 +910,86 @@ Se deberán incluir pruebas unitarias y pruebas de integración para las reglas 
 - **Unitarias** (`src/**/*.spec.ts`, se ejecutan con `npm run test`): prueban servicios aislados, simulando (mock) el acceso a la base de datos.
 - **Integración** (`test/*.e2e-spec.ts`, se ejecutan con `npm run test:e2e`): prueban los endpoints por HTTP (controladores, pipes, DTOs y servicios reales). `test/categories-products.e2e-spec.ts` usa un doble en memoria de `PrismaService` que replica `UNIQUE` y `ON DELETE RESTRICT`, así que no depende de PostgreSQL. `test/swagger.e2e-spec.ts` genera el documento OpenAPI y comprueba que cubra todas las rutas. `test/inventory-movements.e2e-spec.ts` se ejecuta solo cuando se define `TEST_DATABASE_URL`; sin esa variable sus 8 pruebas aparecen como omitidas. Para ejecutarlas, use una base separada (`inventory_management_test`) para no borrar sus datos de desarrollo.
 
-Estado verificado en `develop`: `npm run build`, `npm run test` (30 pruebas) y `npm run test:e2e` (12 pruebas en verde: 7 de integración de categorías/productos, 4 de Swagger y la del `AppController`; 8 pruebas de movimientos quedan omitidas al no definir `TEST_DATABASE_URL`).
+Estado verificado: `npm run build`, `npm run test` (38 pruebas) y `npm run test:e2e` (14 pruebas en verde: 7 de integración de categorías/productos, 4 de Swagger, 2 de health y la del `AppController`; 8 pruebas de movimientos quedan omitidas al no definir `TEST_DATABASE_URL`).
 
 ---
 
 ## 14. Preparación para producción
 
-La primera etapa del proyecto se realizará localmente.
+La implementación local terminó y está integrada en `develop`. Esta sección describe la preparación backend ya incluida en el repositorio; el despliegue efectivo se ejecutará cuando se defina la plataforma de alojamiento.
 
-Una vez finalizada y aprobada la implementación local, se deberá preparar el backend para producción.
+### Variables de entorno y separación de entornos
 
-Esta segunda etapa deberá contemplar:
+`src/config/env.validation.ts` valida la configuración al arrancar. `ConfigModule` se registra globalmente en `src/app.module.ts`:
 
-- Configuración de una base de datos PostgreSQL de producción.
-- Configuración de variables de entorno seguras.
-- Separación de configuraciones locales y productivas.
-- Ejecución de migraciones mediante Prisma.
-- Configuración del servidor de producción.
-- Manejo de errores y registros.
-- Verificación de conectividad con la base de datos.
-- Pruebas de los endpoints desplegados.
+- En **local/desarrollo** lee, en este orden: `.env.development.local`, `.env.development`, `.env.local` y `.env`.
+- En **producción** ignora cualquier archivo `.env`: las variables las inyecta la plataforma o un gestor de secretos.
+- En **pruebas** se omite la validación para no depender de una base de datos real.
 
-**Importante:** las migraciones en producción deben ejecutarse con:
+Variables soportadas:
+
+| Variable | Ejemplo | Uso |
+|---|---|---|
+| `NODE_ENV` | `production` | `development`, `test` o `production` |
+| `DATABASE_URL` | `postgresql://user:pass@host:5432/inventory_management?schema=public&sslmode=require` | Cadena de conexión PostgreSQL (obligatoria fuera de pruebas) |
+| `PORT` | `3000` | Puerto HTTP, entre 1 y 65535 |
+| `HOST` | `0.0.0.0` | Interfaz de escucha del servidor |
+| `LOG_LEVEL` | `log` | `error`, `warn`, `log`, `debug` o `verbose` |
+| `SWAGGER_ENABLED` | `true` | Permite desactivar `/api/docs` en producción |
+| `TEST_DATABASE_URL` | `postgresql://...@localhost:5432/inventory_management_test` | Solo para e2e contra BD real |
+
+Plantillas: `.env.example`, `.env.development.example` y `.env.production.example`. **No contienen credenciales reales** y ningún `.env*` se versiona; solo se versionan los `*.example`.
+
+### Base de datos y migraciones
+
+La base de datos de producción debe ser PostgreSQL y accederse con `DATABASE_URL`, idealmente con TLS (`sslmode=require`). Las migraciones se aplican como paso previo al arranque del servidor:
 
 ```bash
+npm ci
+npx prisma generate
 npx prisma migrate deploy
+npm run build
+npm run start:prod
 ```
 
-No se deberá utilizar `prisma migrate dev` en producción.
+`npx prisma migrate deploy` es el **único** comando de migración permitido en producción. `npx prisma migrate dev` queda restringido al entorno local porque puede modificar migraciones y la base de datos.
 
-Las credenciales de producción nunca deberán almacenarse en el repositorio.
+### Servidor, errores y registros
 
-La plataforma de alojamiento y la infraestructura de producción serán definidas en una segunda etapa.
+- `src/main.ts` usa `HOST`/`PORT`, `ValidationPipe`, filtro global de errores y `enableShutdownHooks()` para cerrar la conexión de Prisma de forma ordenada.
+- `src/common/filters/all-exceptions.filter.ts` responde siempre con:
+
+```json
+{
+  "statusCode": 500,
+  "message": "Error interno del servidor",
+  "error": "Internal Server Error",
+  "timestamp": "2026-11-20T00:00:00.000Z",
+  "path": "/products"
+}
+```
+
+En producción los errores no esperados no exponen mensajes internos; se registran con `Logger`. El nivel de detalle se controla con `LOG_LEVEL`.
+
+### Verificación y pruebas después del despliegue
+
+1. Comprobar conectividad:
+
+```bash
+curl https://TU_HOST/health
+```
+
+Respuesta esperada: `200` con `{"status":"ok","database":"up","timestamp":"..."}`. Si PostgreSQL no responde, devuelve `503`.
+
+2. Comprobar documentación y endpoints:
+
+```bash
+BASE_URL=https://TU_HOST npm run smoke:prod
+```
+
+El script `scripts/smoke-test.mjs` valida `/health`, `/api/docs`, `/categories`, `/products` y `/inventory/summary`. También puede ejecutarse con `npm run test:e2e` antes del despliegue.
+
+La guía operativa completa está en [`docs/production-runbook.md`](docs/production-runbook.md).
 
 ---
 
@@ -1136,7 +1184,7 @@ Códigos acordados: `400` validación de DTO, `404` recurso inexistente, `409` d
 npm run start:dev
 ```
 
-Abre `http://localhost:3000/api/docs`. La configuración (título, descripción, versión, servidor y los 5 tags) está centralizada en `src/swagger.config.ts` y la usa `src/main.ts`.
+Abre `http://localhost:3000/api/docs`. La configuración (título, descripción, versión, servidor y los 6 tags) está centralizada en `src/swagger.config.ts` y la usa `src/main.ts`.
 
 ### Cobertura de documentación
 
@@ -1161,8 +1209,9 @@ Abre `http://localhost:3000/api/docs`. La configuración (título, descripción,
 | inventory | GET | `/inventory/summary` | 200 | — |
 | inventory | GET | `/inventory/low-stock` | 200 | 400 |
 | inventory | GET | `/inventory/out-of-stock` | 200 | 400 |
+| health | GET | `/health` | 200 | 503 |
 
-**Total: 12 rutas y 19 operaciones**, todas con `@ApiTags`, `@ApiOperation` y al menos una respuesta 2xx documentada.
+**Total: 13 rutas y 20 operaciones**, todas con `@ApiTags`, `@ApiOperation` y al menos una respuesta 2xx documentada.
 
 Parámetros de consulta relevantes:
 
@@ -1177,7 +1226,7 @@ Todos los `id` y `productId` de ruta usan `ParseUUIDPipe`, por lo que Swagger lo
 `test/swagger.e2e-spec.ts` genera el documento OpenAPI con la misma configuración que `main.ts` y comprueba que:
 
 1. El título, la versión y la descripción sean los esperados.
-2. Estén los 5 tags y las 12 rutas / 19 operaciones.
+2. Estén los 6 tags y las 13 rutas / 20 operaciones.
 3. Cada operación tenga `summary`, `tags` y una respuesta `2xx`.
 4. Estén los esquemas de entidades y DTOs, y que los parámetros de ruta sean UUID.
 
@@ -1189,4 +1238,4 @@ npm run test
 npm run test:e2e
 ```
 
-Evidencia sugerida para el PR: captura de `/api/docs` mostrando los tags `app`, `categories`, `products`, `inventory-movements` e `inventory`, y el resultado de `npm run test:e2e` con las 12 pruebas en verde (más 8 omitidas por no definir `TEST_DATABASE_URL`).
+Evidencia sugerida para el PR: captura de `/api/docs` mostrando los tags `app`, `categories`, `products`, `inventory-movements`, `inventory` y `health`, y el resultado de `npm run test:e2e` con las 14 pruebas en verde (más 8 omitidas por no definir `TEST_DATABASE_URL`).
