@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/require-await, @typescript-eslint/only-throw-error -- El doble de Prisma es dinámico a propósito: simula consultas y errores de la BD para las pruebas HTTP. */
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { randomUUID } from 'crypto';
@@ -38,7 +39,11 @@ function createPrismaFake() {
         return (condition as Row[]).some((sub) => matches(row, sub));
       }
       const value = row[key];
-      if (condition && typeof condition === 'object' && !(condition instanceof Date)) {
+      if (
+        condition &&
+        typeof condition === 'object' &&
+        !(condition instanceof Date)
+      ) {
         return Object.entries(condition as Row).every(([operator, operand]) => {
           switch (operator) {
             case 'contains':
@@ -50,8 +55,10 @@ function createPrismaFake() {
             case 'gte':
               return value >= (operand as number);
             case 'lte':
-              return value <=
-                (operand === MIN_STOCK_REF ? row.minStock : (operand as number));
+              return (
+                value <=
+                (operand === MIN_STOCK_REF ? row.minStock : (operand as number))
+              );
             case 'equals':
               return value === operand;
             default:
@@ -66,7 +73,10 @@ function createPrismaFake() {
     const sorted = [...rows].sort(
       (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
     );
-    return sorted.slice(args.skip ?? 0, (args.skip ?? 0) + (args.take ?? rows.length));
+    return sorted.slice(
+      args.skip ?? 0,
+      (args.skip ?? 0) + (args.take ?? rows.length),
+    );
   };
 
   const prisma: Row = {
@@ -100,7 +110,10 @@ function createPrismaFake() {
       update: jest.fn(async ({ where, data }: Row) => {
         const index = categories.findIndex((item) => item.id === where.id);
         if (index < 0) throw { code: 'P2025' };
-        if (data.name && categories.some((item, i) => i !== index && item.name === data.name)) {
+        if (
+          data.name &&
+          categories.some((item, i) => i !== index && item.name === data.name)
+        ) {
           throw { code: 'P2002' };
         }
         categories[index] = {
@@ -141,24 +154,32 @@ function createPrismaFake() {
         return withCategory(row, include);
       }),
       findMany: jest.fn(async ({ where, include, skip, take }: Row = {}) =>
-        paginateRows(products.filter((item) => matches(item, where)), { skip, take }).map(
-          (row) => withCategory(row, include),
-        ),
+        paginateRows(
+          products.filter((item) => matches(item, where)),
+          { skip, take },
+        ).map((row) => withCategory(row, include)),
       ),
       findUnique: jest.fn(async ({ where, include }: Row) => {
         const row = products.find((item) => item.id === where.id);
         return row ? withCategory(row, include) : null;
       }),
-      count: jest.fn(async ({ where }: Row = {}) =>
-        products.filter((item) => matches(item, where)).length,
+      count: jest.fn(
+        async ({ where }: Row = {}) =>
+          products.filter((item) => matches(item, where)).length,
       ),
       update: jest.fn(async ({ where, data, include }: Row) => {
         const index = products.findIndex((item) => item.id === where.id);
         if (index < 0) throw { code: 'P2025' };
-        if (data.sku && products.some((item, i) => i !== index && item.sku === data.sku)) {
+        if (
+          data.sku &&
+          products.some((item, i) => i !== index && item.sku === data.sku)
+        ) {
           throw { code: 'P2002' };
         }
-        if (data.categoryId && !categories.some((item) => item.id === data.categoryId)) {
+        if (
+          data.categoryId &&
+          !categories.some((item) => item.id === data.categoryId)
+        ) {
           throw { code: 'P2003' };
         }
         products[index] = {
@@ -199,8 +220,9 @@ function createPrismaFake() {
         return row;
       }),
       findMany: jest.fn(async () => [...movements]),
-      findUnique: jest.fn(async ({ where }: Row) =>
-        movements.find((item) => item.id === where.id) ?? null,
+      findUnique: jest.fn(
+        async ({ where }: Row) =>
+          movements.find((item) => item.id === where.id) ?? null,
       ),
       count: jest.fn(async () => movements.length),
     },
@@ -226,7 +248,9 @@ describe('Categorías y productos (integración HTTP)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     await app.init();
   });
 
@@ -237,7 +261,11 @@ describe('Categorías y productos (integración HTTP)', () => {
   const createCategory = async (name: string) =>
     request(app.getHttpServer()).post('/categories').send({ name }).expect(201);
 
-  const createProduct = async (categoryId: string, sku: string, overrides: Row = {}) =>
+  const createProduct = async (
+    categoryId: string,
+    sku: string,
+    overrides: Row = {},
+  ) =>
     request(app.getHttpServer())
       .post('/products')
       .send({
@@ -335,7 +363,10 @@ describe('Categorías y productos (integración HTTP)', () => {
   it('filtra por búsqueda y lowStock con paginación', async () => {
     const category = await createCategory('Teclados');
     await createProduct(category.body.id, 'TEC-010', { stock: 2, minStock: 5 });
-    await createProduct(category.body.id, 'TEC-011', { stock: 20, minStock: 5 });
+    await createProduct(category.body.id, 'TEC-011', {
+      stock: 20,
+      minStock: 5,
+    });
 
     const response = await request(app.getHttpServer())
       .get('/products')

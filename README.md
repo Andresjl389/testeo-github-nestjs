@@ -912,6 +912,14 @@ Se deberán incluir pruebas unitarias y pruebas de integración para las reglas 
 
 Estado verificado: `npm run build`, `npm run test` (38 pruebas) y `npm run test:e2e` (14 pruebas en verde: 7 de integración de categorías/productos, 4 de Swagger, 2 de health y la del `AppController`; 8 pruebas de movimientos quedan omitidas al no definir `TEST_DATABASE_URL`).
 
+Con `TEST_DATABASE_URL` apuntando a una base de prueba separada y ya migrada con `npx prisma migrate deploy`, se ejecuta la suite completa:
+
+```bash
+TEST_DATABASE_URL="postgresql://usuario:password@localhost:5432/inventory_management_test?schema=public" npm run test:e2e
+```
+
+Resultado verificado: **5 suites, 22 pruebas en verde, 0 omitidas**. Los mensajes `Foreign key constraint violated` que aparecen en la consola son esperados: las pruebas comprueban que `Restrict` impide borrar registros con relaciones.
+
 ---
 
 ## 14. Preparación para producción
