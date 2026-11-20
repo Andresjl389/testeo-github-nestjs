@@ -989,40 +989,128 @@ Los desarrolladores tendrán libertad para proponer mejoras técnicas, siempre q
 
 ## 18. Decisiones de diseño del equipo (completar)
 
-> Esta sección la completan los desarrolladores durante la Fase 1 y la mantienen actualizada. Reemplacen los textos entre corchetes.
+> Esta sección se completó durante la Fase 1 y se mantiene actualizada.
 
 **Equipo**
 
 | Rol | Nombre | Usuario de GitHub |
 |---|---|---|
-| Desarrollador A – Productos y categorías | Brandon | [usuario] |
-| Desarrollador B – Movimientos e inventario | Alejandra | [usuario] |
+| Desarrollador A – Productos y categorías | Brandon | BrandonMor115 |
+| Desarrollador B – Movimientos e inventario | Alejandra | ghilarybazan11-bot |
 
 ### Diagrama entidad-relación
 
-[Insertar aquí el diagrama (bloque Mermaid, imagen o enlace).]
+```mermaid
+erDiagram
+    CATEGORY ||--o{ PRODUCT : "tiene"
+    PRODUCT  ||--o{ INVENTORY_MOVEMENT : "registra"
+
+    CATEGORY {
+        uuid id PK
+        text name UK
+        text description
+        timestamp created_at
+        timestamp updated_at
+    }
+    PRODUCT {
+        uuid id PK
+        text name
+        text description
+        text sku UK
+        numeric price
+        int stock
+        int min_stock
+        uuid category_id FK
+        timestamp created_at
+        timestamp updated_at
+    }
+    INVENTORY_MOVEMENT {
+        uuid id PK
+        uuid product_id FK
+        movement_type type
+        int quantity
+        text description
+        timestamp created_at
+    }
+```
 
 ### Decisiones de la base de datos
 
 | # | Pregunta | Decisión | Justificación |
 |---|---|---|---|
-| 1 | Tipo de dato de `price` | | |
-| 2 | Representación de `IN` / `OUT` | | |
-| 3 | Campos opcionales | | |
-| 4 | Generación de UUID | | |
-| 5 | Manejo de `createdAt` / `updatedAt` | | |
-| 6 | Ubicación de llaves foráneas | | |
-| 7 | `onDelete` en Category → Product y Product → InventoryMovement | | |
-| 8 | Validación de reglas: servicio, BD o ambos | | |
-| 9 | Campos únicos | | |
-| 10 | Índices | | |
-| 11 | Stock no negativo a nivel de BD | | |
-| 12 | Convención de nombres en PostgreSQL | | |
+| 1 | Tipo de dato de `price` | `Decimal @db.Decimal(12, 2)` → `numeric(12,2)` en PostgreSQL | `Float` usa IEEE-754: `0.1 + 0.2 !== 0.3`, por lo que acumula errores al sumar precios o calcular el valor del inventario. `numeric` es decimal exacto. Precisión 12 y escala 2 permiten hasta `9.999.999.999,99`. En JSON se serializa con `toString()` para no perder precisión. |
+| 2 | Representación de `IN` / `OUT` | Enum de Prisma `MovementType { IN OUT }`, mapeado a `movement_type` en PostgreSQL | La BD rechaza valores inválidos y TypeScript tiene tipado estático, sin strings mágicos. La alternativa (`String` + `CHECK`) facilita agregar valores nuevos, pero pierde tipado. |
+| 3 | Campos opcionales | `description` opcional en las tres entidades; el resto obligatorio | La descripción es información complementaria. Los ID, FK, precios, cantidades y fechas son necesarios para la integridad; `categoryId` y `productId` nunca son `NULL` para evitar huérfanos. En DTOs se usa `@IsOptional()`. |
+| 4 | Generación de UUID | La aplicación, con `@default(uuid())` + `@db.Uuid` | Todo lo que escribe pasa por Prisma; no dependemos de extensiones de PostgreSQL y las pruebas unitarias pueden simular el ID. Alternativa descartada: `gen_random_uuid()` de la BD, útil solo si hay insertos directos por SQL. |
+| 5 | Manejo de `createdAt` / `updatedAt` | `createdAt @default(now())` (lo llena la BD) y `updatedAt @updatedAt` (lo actualiza Prisma Client). `InventoryMovement` solo tiene `createdAt` | Un movimiento es un evento inmutable (append-only): no se edita ni se elimina, así que `updatedAt` siempre sería igual a `createdAt` y sugeriría que el historial se puede alterar. |
+| 6 | Ubicación de llaves foráneas | `products.category_id` e `inventory_movements.product_id` | La FK va en el lado "muchos". En Prisma se declara en ambos modelos: campo escalar + `@relation(fields: [...], references: [id], onDelete: Restrict)` en el hijo, y campo de lista (`Product[]`, `InventoryMovement[]`) en el padre. |
+| 7 | `onDelete` en las dos relaciones | `Restrict` en Category → Product y en Product → InventoryMovement | `Cascade` borraría el historial de movimientos; `SetNull` dejaría productos huérfanos y además Prisma no lo permite en relaciones obligatorias; `NoAction` es casi equivalente pero se puede diferir. PostgreSQL devuelve `23503` / Prisma `P2003` → HTTP `409`. |
+| 8 | Validación de reglas: servicio, BD o ambos | **Ambos** | El servicio devuelve mensajes claros y códigos HTTP adecuados (`400`, `404`, `409`) y evita consultas innecesarias. La BD garantiza los invariantes ante escrituras directas y condiciones de carrera (dos `OUT` simultáneos). |
+| 9 | Campos únicos | `Category.name`, `Product.sku` y los tres `id` (PK) | Son las reglas de negocio: nombres de categoría no repetidos y SKU único. `Product.name` no es único: dos productos pueden llamarse igual con distinto SKU. |
+| 10 | Índices | `category_id`; `(stock, min_stock)`; `(product_id, created_at)`; `(type, created_at)`; además índices GIN trigram sobre `name` y `sku` para `search` | Corresponden a los filtros de la sección 7. PostgreSQL no indexa automáticamente las FK. Un `contains` genera `ILIKE '%texto%'`, que no aprovecha un B-tree: requiere `pg_trgm`. |
+| 11 | Stock no negativo a nivel de BD | `CHECK (stock >= 0)`, `CHECK (min_stock >= 0)`, `CHECK (price > 0)` y `CHECK (quantity > 0)` en la migración inicial | Prisma 7 no permite `CHECK` en `schema.prisma`, así que se agregaron con SQL crudo en `prisma/migrations/20261120000000_init/migration.sql`. La aplicación además usa `updateMany` con `stock >= quantity` en el `where` para ser atómica ante concurrencia. |
+| 12 | Convención de nombres en PostgreSQL | camelCase en TypeScript, snake_case en PostgreSQL con `@map` y `@@map` | `categories`, `products`, `inventory_movements`, `category_id`, `product_id`, `min_stock`, `created_at`, `updated_at`, `movement_type`. Cada lenguaje mantiene su convención. |
+
+Índice trigram para búsquedas (se aplica cuando se implemente `?search=`; no se incluyó en la migración inicial para no exigir la extensión `pg_trgm` en todos los entornos):
+
+```sql
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX idx_products_name_trgm ON products USING GIN (name gin_trgm_ops);
+CREATE INDEX idx_products_sku_trgm  ON products USING GIN (sku gin_trgm_ops);
+```
 
 ### Contratos entre módulos
 
-[Describir qué métodos expone el módulo de productos al módulo de movimientos, y cómo se maneja la transacción al actualizar el stock.]
+`ProductsModule` exporta `ProductsService`; `InventoryMovementsModule` lo importa (nunca al revés, para evitar dependencia circular). `UpdateProductDto` **no expone `stock`**: los cambios de existencias solo ocurren vía movimientos.
+
+`ProductsService` expone un método de escritura de bajo nivel:
+
+```ts
+async applyMovement(
+  productId: string,
+  movement: { type: MovementType; quantity: number },
+  tx: Prisma.TransactionClient, // obligatorio: evita escribir fuera de la transacción
+): Promise<void>
+```
+
+- `IN`: `tx.product.updateMany({ where: { id: productId }, data: { stock: { increment: quantity } } })`.
+- `OUT`: `tx.product.updateMany({ where: { id: productId, stock: { gte: quantity } }, data: { stock: { decrement: quantity } } })`; si `count === 0`, se distingue entre producto inexistente (`404`) y stock insuficiente (`409`).
+- También se expone `exists(productId, tx?)` para validaciones de lectura.
+
+`InventoryMovementsService` orquesta la transacción:
+
+```ts
+async register(dto: CreateMovementDto) {
+  return this.prisma.$transaction(async (tx) => {
+    await this.products.applyMovement(dto.productId, dto, tx);
+    return tx.inventoryMovement.create({ data: { ...dto } });
+  });
+}
+```
+
+Se eligió llamar al servicio de productos **pasando `tx`** en lugar de usar `this.prisma.product` directamente: conserva el límite entre módulos y mantiene la atomicidad. Si el método usara el cliente global, el `update` ocurriría fuera de la transacción y una falla en `create` dejaría el stock modificado. Cualquier error hace `ROLLBACK`, cumpliendo las reglas 8 y 9 del módulo de movimientos.
 
 ### Formato de respuestas y errores
 
-[Describir el formato de respuestas paginadas y de errores acordado.]
+Propuesta a confirmar en equipo antes de implementar los módulos:
+
+```json
+{
+  "data": [],
+  "total": 42,
+  "page": 1,
+  "limit": 10
+}
+```
+
+```json
+{
+  "statusCode": 409,
+  "message": "No se puede eliminar la categoría porque tiene productos asociados",
+  "error": "Conflict",
+  "timestamp": "2026-11-20T00:00:00.000Z",
+  "path": "/categories/:id"
+}
+```
+
+Códigos acordados: `400` validación de DTO, `404` recurso inexistente, `409` duplicados (`P2002`), FK Restrict (`P2003`) o CHECK violado, stock insuficiente y movimientos sobre producto inexistente. Ambos módulos usan el mismo formato.
