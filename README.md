@@ -34,8 +34,8 @@ Marquen cada tarea con `[x]` a medida que la terminen (pueden hacerlo dentro del
 
 Las tareas 1.2, 1.3 y 1.4 van en la **misma rama** y en un solo Pull Request, con commits de ambos. Es su primera práctica de trabajar los dos sobre la misma rama: hagan `git pull` antes de empezar a trabajar y `git push` al terminar.
 
-- [ ] **Brandon:** 1.1, 1.2, 1.4 y revisión del Pull Request
-- [ ] **Alejandra:** 1.1, 1.3, 1.4
+- [x] **Brandon:** 1.1, 1.2, 1.4 y revisión del Pull Request
+- [x] **Alejandra:** 1.1, 1.3, 1.4
 
 ### Fase 2 y 3 – Desarrollo e integración
 
@@ -52,11 +52,11 @@ Pueden trabajar en paralelo; el orden aplica solo a **cuándo se integra** cada 
 
 > **Alejandra:** para probar movimientos antes de que exista el módulo de productos, puedes crear productos de prueba directamente en la base de datos con `npx prisma studio`.
 
-- [ ] **Brandon:** `feature/categories`, `feature/products`, conflicto en el paso 3, revisión de los PR de Alejandra
+- [x] **Brandon:** `feature/categories`, `feature/products`, conflicto en el paso 3, revisión de los PR de Alejandra
 - [x] **Alejandra:** `feature/inventory-movements`
 - [x] **Alejandra:** conflicto en el paso 2 (categorías + movimientos en `src/app.module.ts`)
 - [x] **Alejandra:** `feature/inventory-reports`
-- [ ] **Alejandra:** revisión de los PR de Brandon
+- [x] **Alejandra:** revisión de los PR de Brandon
 
 ### Fase 4 – Pruebas y documentación
 
@@ -68,7 +68,7 @@ Pueden trabajar en paralelo; el orden aplica solo a **cuándo se integra** cada 
 
 - [x] **Brandon:** 4.1, 4.3
 - [x] **Alejandra:** 4.2 (`test/inventory-movements`)
-- [ ] **Alejandra:** 4.3
+- [x] **Alejandra:** 4.3
 
 ### Fase 5 – Producción
 
