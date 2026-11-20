@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inventory API | Gestión de inventario</title>
+    <meta
+      name="description"
+      content="API de inventario con categorías, productos, movimientos atómicos y reportes. Documentación interactiva con Swagger."
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="aurora aurora--one"></div>
+    <div class="aurora aurora--two"></div>
+
+    <header class="navbar">
+      <a class="brand" href="#inicio">
+        <span class="brand__cube" aria-hidden="true"></span>
+        <span>Inventory<b>API</b></span>
+      </a>
+      <nav class="nav-links" aria-label="Navegación principal">
+        <a href="#modulos">Módulos</a>
+        <a href="#endpoints">Endpoints</a>
+        <a href="#inicio" class="btn btn--small btn--primary js-docs">Ver documentación</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" id="inicio">
+        <div class="hero__content">
+          <div class="badge"><span class="badge__dot"></span> NestJS · Prisma · PostgreSQL</div>
+          <h1>
+            Tu inventario,
+            <span class="gradient-text">bajo control.</span>
+          </h1>
+          <p class="hero__lead">
+            Registra entradas y salidas con stock siempre consistente, consulta reportes
+            en tiempo real y explora todo desde una documentación interactiva.
+          </p>
+          <div class="hero__actions">
+            <a href="/api/docs" class="btn btn--primary btn--glow js-docs">
+              Explorar Swagger
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg>
+            </a>
+            <a href="#endpoints" class="btn btn--ghost">Ver endpoints</a>
+          </div>
+          <div class="features-mini">
+            <span>Transacciones atómicas</span>
+            <span>Historial inmutable</span>
+            <span>Reportes agregados</span>
+          </div>
+        </div>
+
+        <div class="hero__visual" aria-hidden="true">
+          <div class="scene">
+            <div class="floor"></div>
+            <div class="box box--one"><i class="face face--top"></i><i class="face face--left"></i><i class="face face--right"></i></div>
+            <div class="box box--two"><i class="face face--top"></i><i class="face face--left"></i><i class="face face--right"></i></div>
+            <div class="box box--three"><i class="face face--top"></i><i class="face face--left"></i><i class="face face--right"></i></div>
+            <div class="float-card float-card--stock">
+              <span class="float-card__label">Stock disponible</span>
+              <strong data-count="1284">1284</strong>
+              <span class="float-card__trend">▲ 12.4%</span>
+            </div>
+            <div class="float-card float-card--moves">
+              <span class="float-card__label">Movimientos / hoy</span>
+              <strong data-count="42">42</strong>
+              <span class="chart"><i></i><i></i><i></i><i></i><i></i></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats" aria-label="Resumen del proyecto">
+        <div class="stat"><strong>4</strong><span>módulos activos</span></div>
+        <div class="stat"><strong>3</strong><span>reportes listos</span></div>
+        <div class="stat"><strong>24</strong><span>pruebas unitarias</span></div>
+        <div class="stat"><strong>100%</strong><span>stock consistente</span></div>
+      </section>
+
+      <section class="modules" id="modulos">
+        <div class="section-head">
+          <span class="eyebrow">Arquitectura</span>
+          <h2>Todo lo que necesitas, en un solo lugar</h2>
+          <p>Cada módulo resuelve una parte del ciclo del inventario y se integra mediante contratos claros.</p>
+        </div>
+        <div class="cards">
+          <article class="card js-tilt">
+            <div class="card__icon card__icon--violet">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10" /></svg>
+            </div>
+            <h3>Categorías</h3>
+            <p>Organiza el catálogo con nombres únicos y consulta los productos de cada categoría.</p>
+            <span class="tag">/categories</span>
+          </article>
+          <article class="card js-tilt">
+            <div class="card__icon card__icon--blue">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7 12 3l9 4-9 4-9-4Zm0 0v10l9 4 9-4V7M12 11v10" /></svg>
+            </div>
+            <h3>Productos</h3>
+            <p>CRUD completo, búsqueda por nombre o SKU, filtros y paginación lista para usar.</p>
+            <span class="tag">/products</span>
+          </article>
+          <article class="card js-tilt">
+            <div class="card__icon card__icon--cyan">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6" /></svg>
+            </div>
+            <h3>Movimientos</h3>
+            <p>Entradas y salidas dentro de una transacción: el stock nunca queda inconsistente.</p>
+            <span class="tag">/inventory-movements</span>
+          </article>
+          <article class="card js-tilt">
+            <div class="card__icon card__icon--pink">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9m5 10V5m5 14v-7m5 7V3" /></svg>
+            </div>
+            <h3>Reportes</h3>
+            <p>Resumen general, stock bajo, sin existencias y los productos más movidos.</p>
+            <span class="tag">/inventory</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="endpoints" id="endpoints">
+        <div class="section-head">
+          <span class="eyebrow">API</span>
+          <h2>Endpoints principales</h2>
+          <p>Pruébalos directamente desde Swagger con el botón <b>Try it out</b>.</p>
+        </div>
+        <div class="endpoint-grid">
+          <a class="endpoint" href="/api/docs"><span class="method method--post">POST</span><code>/inventory-movements</code><span>Registrar entrada o salida</span></a>
+          <a class="endpoint" href="/api/docs"><span class="method method--get">GET</span><code>/products?search=&page=1</code><span>Buscar y paginar productos</span></a>
+          <a class="endpoint" href="/api/docs"><span class="method method--get">GET</span><code>/inventory/summary</code><span>Resumen del inventario</span></a>
+          <a class="endpoint" href="/api/docs"><span class="method method--get">GET</span><code>/inventory/low-stock</code><span>Productos con stock bajo</span></a>
+          <a class="endpoint" href="/api/docs"><span class="method method--get">GET</span><code>/inventory/out-of-stock</code><span>Productos sin existencias</span></a>
+        </div>
+      </section>
+
+      <section class="cta">
+        <div>
+          <h2>¿Listo para explorar la API?</h2>
+          <p>Abre la documentación interactiva y prueba los endpoints en segundos.</p>
+        </div>
+        <a href="/api/docs" class="btn btn--primary btn--glow js-docs">Abrir documentación</a>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>Inventory API · Proyecto de inventario con NestJS y Prisma</span>
+      <a href="/api/docs">Swagger UI</a>
+    </footer>
+
+    <script src="/script.js"></script>
+  </body>
+</html>

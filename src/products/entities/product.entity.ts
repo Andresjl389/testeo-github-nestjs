@@ -21,7 +21,11 @@ export class ProductEntity {
   @ApiProperty({ example: 'TEC-001' })
   sku: string;
 
-  @ApiProperty({ type: String, example: '49.90', description: 'Decimal serializado como texto' })
+  @ApiProperty({
+    type: String,
+    example: '49.90',
+    description: 'Decimal serializado como texto',
+  })
   price: string;
 
   @ApiProperty({ example: 25 })

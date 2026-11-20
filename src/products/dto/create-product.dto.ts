@@ -23,7 +23,10 @@ export class CreateProductDto {
   @MaxLength(200)
   name: string;
 
-  @ApiPropertyOptional({ example: 'Switch rojo, retroiluminado', nullable: true })
+  @ApiPropertyOptional({
+    example: 'Switch rojo, retroiluminado',
+    nullable: true,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(2000)
@@ -35,7 +38,11 @@ export class CreateProductDto {
   @MaxLength(100)
   sku: string;
 
-  @ApiProperty({ example: 49.9, minimum: 0.01, description: 'Decimal con 2 decimales' })
+  @ApiProperty({
+    example: 49.9,
+    minimum: 0.01,
+    description: 'Decimal con 2 decimales',
+  })
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.01)

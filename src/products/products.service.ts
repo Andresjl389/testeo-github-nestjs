@@ -166,9 +166,7 @@ export class ProductsService {
       select: { id: true },
     });
     if (!product) {
-      throw new NotFoundException(
-        `Producto con id ${productId} no encontrado`,
-      );
+      throw new NotFoundException(`Producto con id ${productId} no encontrado`);
     }
 
     if (movement.type === MovementType.OUT) {
@@ -216,10 +214,7 @@ export class ProductsService {
     };
   }
 
-  private handlePrismaError(
-    error: unknown,
-    messages: ErrorMessages,
-  ): never {
+  private handlePrismaError(error: unknown, messages: ErrorMessages): never {
     const code = (error as { code?: string } | null)?.code;
 
     if (code === 'P2002') {
