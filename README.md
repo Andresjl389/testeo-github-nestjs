@@ -67,7 +67,8 @@ Pueden trabajar en paralelo; el orden aplica solo a **cuándo se integra** cada 
 | 4.3 | Revisar que Swagger documente todos los endpoints y actualizar el README | Ambos | `docs/final-readme` | — |
 
 - [ ] **Brandon:** 4.1, 4.3
-- [ ] **Alejandra:** 4.2, 4.3
+- [x] **Alejandra:** 4.2 (`test/inventory-movements`)
+- [ ] **Alejandra:** 4.3
 
 ### Fase 5 – Producción
 

@@ -148,6 +148,35 @@ describe('InventoryMovementsService', () => {
     expect(tx.inventoryMovement.create).not.toHaveBeenCalled();
   });
 
+  it('no registra nada si falla la actualización de stock de una salida', async () => {
+    tx.product.updateMany.mockRejectedValue(new Error('DB down'));
+
+    await expect(
+      service.create({
+        productId: 'product-1',
+        type: MovementType.OUT,
+        quantity: 3,
+      }),
+    ).rejects.toBeInstanceOf(InternalServerErrorException);
+
+    expect(tx.inventoryMovement.create).not.toHaveBeenCalled();
+  });
+
+  it('traduce un error de base de datos al insertar el movimiento a 500', async () => {
+    tx.inventoryMovement.create.mockRejectedValue(new Error('DB down'));
+
+    await expect(
+      service.create({
+        productId: 'product-1',
+        type: MovementType.IN,
+        quantity: 2,
+      }),
+    ).rejects.toBeInstanceOf(InternalServerErrorException);
+
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(tx.product.update).toHaveBeenCalled();
+  });
+
   it('traduce errores inesperados de base de datos a 500', async () => {
     prisma.inventoryMovement.findMany.mockRejectedValue(
       new Error('connection lost'),
