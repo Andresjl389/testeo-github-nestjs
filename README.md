@@ -178,6 +178,11 @@ Scripts disponibles en `package.json`:
 | `npm run test:e2e` | Ejecuta las pruebas de integración (`test/*.e2e-spec.ts`) |
 | `npm run test:cov` | Ejecuta las pruebas con reporte de cobertura |
 
+> **Importante después de `git pull` o de cambiar de rama:** ejecuta
+> `npm ci` y luego `npx prisma generate`. Si el `node_modules` queda desactualizado,
+> TypeScript no encuentra dependencias nuevas (por ejemplo `@nestjs/config`) y
+> aparecen muchos errores de `build`, `lint` y `test` aunque el código sea correcto.
+
 ---
 
 ## 4. Plan de trabajo
