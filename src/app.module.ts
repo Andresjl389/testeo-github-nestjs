@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { validateEnvironment } from './config/env.validation';
 import { CategoriesModule } from './categories/categories.module';
+import { ClinicsModule } from './clinics/clinics.module';
 import { HealthModule } from './health/health.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { InventoryMovementsModule } from './inventory-movements/inventory-movements.module';
@@ -29,6 +30,7 @@ const isTest = process.env.NODE_ENV === 'test';
     }),
     PrismaModule,
     CategoriesModule,
+    ClinicsModule,
     InventoryMovementsModule,
     ProductsModule,
     InventoryModule,

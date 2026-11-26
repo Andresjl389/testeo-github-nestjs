@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Práctica CRUD · Clínicas</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        background: #f4f7fb;
+        color: #16233a;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        padding: 32px 20px 60px;
+        background:
+          radial-gradient(circle at 12% 8%, #dceeff 0, transparent 32%),
+          radial-gradient(circle at 88% 0, #e7dcff 0, transparent 28%),
+          #f4f7fb;
+      }
+      .wrap { max-width: 1080px; margin: 0 auto; }
+      header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      h1 { margin: 0 0 6px; font-size: 30px; letter-spacing: -0.02em; }
+      header p { margin: 0; color: #5b6b85; }
+      a.docs {
+        color: #3b5bdb;
+        text-decoration: none;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .card {
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid #e1e7f0;
+        border-radius: 18px;
+        box-shadow: 0 18px 40px rgba(30, 54, 92, 0.08);
+        padding: 24px;
+      }
+      form {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px 20px;
+      }
+      label { display: flex; flex-direction: column; gap: 7px; font-weight: 600; font-size: 14px; }
+      label.full { grid-column: 1 / -1; }
+      input, textarea {
+        width: 100%;
+        border: 1px solid #ccd6e5;
+        border-radius: 10px;
+        padding: 11px 13px;
+        font: inherit;
+        color: inherit;
+        background: #fff;
+        outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+      input:focus, textarea:focus {
+        border-color: #4c6ef5;
+        box-shadow: 0 0 0 3px rgba(76, 110, 245, 0.15);
+      }
+      textarea { resize: vertical; min-height: 76px; }
+      .check {
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+        align-self: end;
+        padding-bottom: 10px;
+      }
+      .check input { width: 18px; height: 18px; }
+      .actions {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+      button {
+        border: 0;
+        border-radius: 10px;
+        padding: 10px 16px;
+        font: inherit;
+        font-weight: 650;
+        cursor: pointer;
+        transition: transform 0.12s, filter 0.12s;
+      }
+      button:hover { filter: brightness(1.04); }
+      button:active { transform: translateY(1px); }
+      .primary { background: #3b5bdb; color: #fff; }
+      .secondary { background: #e9eef7; color: #2d3e5d; }
+      .danger { background: #ffe3e3; color: #c92a2a; padding: 7px 12px; }
+      .small { background: #e7f5ff; color: #1864ab; padding: 7px 12px; }
+      .message {
+        margin: 18px 0 0;
+        border-radius: 10px;
+        padding: 11px 14px;
+        font-size: 14px;
+      }
+      .message[data-kind="error"] { background: #fff0f0; color: #c92a2a; }
+      .message[data-kind="success"] { background: #ebfbee; color: #2b8a3e; }
+      .message[data-kind="info"] { background: #e7f5ff; color: #1864ab; }
+      .list { margin-top: 26px; }
+      .list-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+      .list-head h2 { margin: 0; font-size: 20px; }
+      table { width: 100%; border-collapse: collapse; font-size: 14px; }
+      th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #edf1f7; vertical-align: middle; }
+      th { color: #5b6b85; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+      tr:last-child td { border-bottom: 0; }
+      .pill {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 3px 10px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .pill.on { background: #ebfbee; color: #2b8a3e; }
+      .pill.off { background: #f1f3f5; color: #868e96; }
+      .row-actions { display: flex; gap: 8px; }
+      code { background: #f1f3f5; border-radius: 5px; padding: 2px 5px; font-size: 12px; }
+      @media (max-width: 720px) {
+        header { flex-direction: column; align-items: flex-start; }
+        form { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <header>
+        <div>
+          <h1>Práctica CRUD · Clínicas</h1>
+          <p>Crea, edita, elimina y provoca errores para aprender el contrato de la API.</p>
+        </div>
+        <a class="docs" href="/api/docs">Ver Swagger →</a>
+      </header>
+
+      <section class="card">
+        <form id="clinic-form" novalidate>
+          <label>
+            Nombre *
+            <input id="name" name="name" required maxlength="120" placeholder="Clínica Central" />
+          </label>
+          <label>
+            Teléfono *
+            <input id="phone" name="phone" required maxlength="30" placeholder="+57 300 1234567" />
+          </label>
+          <label class="full">
+            Dirección *
+            <textarea id="address" name="address" required maxlength="200" placeholder="Calle 10 # 20-30"></textarea>
+          </label>
+          <label>
+            Correo
+            <input id="email" name="email" type="email" maxlength="120" placeholder="contacto@clinica.com" />
+          </label>
+          <label>
+            Especialidad
+            <input id="specialty" name="specialty" maxlength="120" placeholder="Medicina general" />
+          </label>
+          <label class="check">
+            <input id="active" name="active" type="checkbox" checked />
+            Clínica activa
+          </label>
+          <div class="actions">
+            <button class="primary" id="submit" type="submit">Crear clínica</button>
+            <button class="secondary" id="cancel-edit" type="button" hidden>Cancelar edición</button>
+            <span>Prueba un nombre repetido para ver un <code>409</code>.</span>
+          </div>
+        </form>
+        <p class="message" id="message" data-kind="info" hidden></p>
+      </section>
+
+      <section class="card list">
+        <div class="list-head">
+          <h2>Clínicas registradas</h2>
+          <button class="small" id="refresh" type="button">Recargar</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Teléfono</th>
+              <th>Dirección</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="clinics-body">
+            <tr><td colspan="5">Cargando…</td></tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+
+    <script>
+      const API = '/clinics';
+      const form = document.getElementById('clinic-form');
+      const message = document.getElementById('message');
+      const submitButton = document.getElementById('submit');
+      const cancelButton = document.getElementById('cancel-edit');
+      const tbody = document.getElementById('clinics-body');
+      let editingId = null;
+
+      function showMessage(text, kind = 'info') {
+        message.textContent = text;
+        message.dataset.kind = kind;
+        message.hidden = !text;
+      }
+
+      function escapeHtml(value = '') {
+        return String(value).replace(/[&<>"']/g, (char) => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#039;',
+        })[char]);
+      }
+
+      async function request(path, options = {}) {
+        const response = await fetch(`${API}${path}`, {
+          ...options,
+          headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+        });
+
+        let payload = null;
+        if (response.status !== 204) {
+          const text = await response.text();
+          if (text) {
+            try { payload = JSON.parse(text); } catch { payload = text; }
+          }
+        }
+
+        if (!response.ok) {
+          const detail = Array.isArray(payload?.message)
+            ? payload.message.join(', ')
+            : (payload?.message || payload || 'Error desconocido');
+          const error = new Error(String(detail));
+          error.status = response.status;
+          throw error;
+        }
+
+        return payload;
+      }
+
+      function dtoFromForm() {
+        return {
+          name: document.getElementById('name').value.trim(),
+          phone: document.getElementById('phone').value.trim(),
+          address: document.getElementById('address').value.trim(),
+          email: document.getElementById('email').value.trim() || undefined,
+          specialty: document.getElementById('specialty').value.trim() || undefined,
+          active: document.getElementById('active').checked,
+        };
+      }
+
+      function fillForm(clinic) {
+        document.getElementById('name').value = clinic.name ?? '';
+        document.getElementById('phone').value = clinic.phone ?? '';
+        document.getElementById('address').value = clinic.address ?? '';
+        document.getElementById('email').value = clinic.email ?? '';
+        document.getElementById('specialty').value = clinic.specialty ?? '';
+        document.getElementById('active').checked = Boolean(clinic.active);
+      }
+
+      function resetForm() {
+        form.reset();
+        document.getElementById('active').checked = true;
+        editingId = null;
+        submitButton.textContent = 'Crear clínica';
+        cancelButton.hidden = true;
+      }
+
+      function render(clinics) {
+        if (!clinics.length) {
+          tbody.innerHTML = '<tr><td colspan="5">No hay clínicas todavía. Crea la primera ↑</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = clinics.map((clinic) => `
+          <tr>
+            <td><strong>${escapeHtml(clinic.name)}</strong><br /><code>${escapeHtml(clinic.id)}</code></td>
+            <td>${escapeHtml(clinic.phone)}</td>
+            <td>${escapeHtml(clinic.address)}</td>
+            <td><span class="pill ${clinic.active ? 'on' : 'off'}">${clinic.active ? 'Activa' : 'Inactiva'}</span></td>
+            <td>
+              <div class="row-actions">
+                <button class="small" type="button" data-action="edit" data-id="${escapeHtml(clinic.id)}">Editar</button>
+                <button class="danger" type="button" data-action="delete" data-id="${escapeHtml(clinic.id)}">Eliminar</button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      async function loadClinics() {
+        const clinics = await request('');
+        render(clinics);
+        showMessage(`${clinics.length} clínica(s) cargadas.`, 'info');
+      }
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const dto = dtoFromForm();
+
+        try {
+          if (editingId) {
+            await request(`/${editingId}`, { method: 'PATCH', body: JSON.stringify(dto) });
+            showMessage('Clínica actualizada correctamente.', 'success');
+          } else {
+            await request('', { method: 'POST', body: JSON.stringify(dto) });
+            showMessage('Clínica creada correctamente.', 'success');
+          }
+          resetForm();
+          await loadClinics();
+        } catch (error) {
+          showMessage(`${error.status || 'Error'}: ${error.message}`, 'error');
+        }
+      });
+
+      cancelButton.addEventListener('click', () => {
+        resetForm();
+        showMessage('Edición cancelada.', 'info');
+      });
+
+      document.getElementById('refresh').addEventListener('click', async () => {
+        try {
+          await loadClinics();
+        } catch (error) {
+          showMessage(`${error.status || 'Error'}: ${error.message}`, 'error');
+        }
+      });
+
+      tbody.addEventListener('click', async (event) => {
+        const button = event.target.closest('button[data-action]');
+        if (!button) return;
+
+        const id = button.dataset.id;
+        if (button.dataset.action === 'edit') {
+          try {
+            const clinic = await request(`/${id}`);
+            fillForm(clinic);
+            editingId = id;
+            submitButton.textContent = 'Guardar cambios';
+            cancelButton.hidden = false;
+            showMessage('Editando clínica. Cambia los datos y guarda.', 'info');
+            form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          } catch (error) {
+            showMessage(`${error.status || 'Error'}: ${error.message}`, 'error');
+          }
+        }
+
+        if (button.dataset.action === 'delete') {
+          if (!window.confirm('¿Eliminar esta clínica? Esta acción no se puede deshacer.')) return;
+          try {
+            await request(`/${id}`, { method: 'DELETE' });
+            showMessage('Clínica eliminada. Pulsa de nuevo para ver un 404.', 'success');
+            await loadClinics();
+          } catch (error) {
+            showMessage(`${error.status || 'Error'}: ${error.message}`, 'error');
+          }
+        }
+      });
+
+      loadClinics().catch((error) => {
+        showMessage(`${error.status || 'Error'}: ${error.message}`, 'error');
+      });
+    </script>
+  </body>
+</html>

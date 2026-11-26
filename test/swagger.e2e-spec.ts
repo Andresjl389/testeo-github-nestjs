@@ -17,6 +17,8 @@ describe('Swagger (documentación completa)', () => {
     '/categories': ['post', 'get'],
     '/categories/{id}': ['get', 'patch', 'delete'],
     '/categories/{id}/products': ['get'],
+    '/clinics': ['post', 'get'],
+    '/clinics/{id}': ['get', 'patch', 'delete'],
     '/products': ['post', 'get'],
     '/products/{id}': ['get', 'patch', 'delete'],
     '/inventory-movements': ['post', 'get'],
@@ -45,7 +47,7 @@ describe('Swagger (documentación completa)', () => {
     await app.close();
   });
 
-  it('expone metadatos y los 6 tags del proyecto', () => {
+  it('expone metadatos y los 7 tags del proyecto', () => {
     expect(document.info.title).toBe('Inventory Management API');
     expect(document.info.version).toBe('1.0');
     expect(document.info.description).toContain('data, total, page, limit');
@@ -54,7 +56,7 @@ describe('Swagger (documentación completa)', () => {
     );
   });
 
-  it('documenta las 13 rutas y las 20 operaciones esperadas', () => {
+  it('documenta las 15 rutas y las 25 operaciones esperadas', () => {
     expect(Object.keys(document.paths).sort()).toEqual(
       Object.keys(expectedOperations).sort(),
     );
@@ -67,7 +69,7 @@ describe('Swagger (documentación completa)', () => {
         operations += 1;
       }
     }
-    expect(operations).toBe(20);
+    expect(operations).toBe(25);
   });
 
   it('toda operación tiene summary, tags y una respuesta 2xx', () => {
@@ -95,6 +97,7 @@ describe('Swagger (documentación completa)', () => {
     const schemas = Object.keys(document.components?.schemas ?? {});
     for (const schema of [
       'CategoryEntity',
+      'ClinicEntity',
       'ProductEntity',
       'InventoryMovementEntity',
       'InventorySummaryEntity',
@@ -104,6 +107,7 @@ describe('Swagger (documentación completa)', () => {
       expect(schemas).toContain(schema);
     }
     expect(schemas).toContain('CreateProductDto');
+    expect(schemas).toContain('CreateClinicDto');
     expect(schemas).toContain('CreateInventoryMovementDto');
 
     const productIdParam = document.paths['/products/{id}']?.get

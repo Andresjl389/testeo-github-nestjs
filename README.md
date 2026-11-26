@@ -163,6 +163,7 @@ El repositorio partió del proyecto base de NestJS (`nest new`) y ya incluye las
 | Swagger en `/api/docs` | ✅ Configurado y verificado automáticamente (sección [19](#19-swagger-y-endpoints-implementados)) |
 | Archivo `.env.example` | ✅ Creado |
 | Módulos de categorías, productos, movimientos y reportes | ✅ Implementados e integrados en `develop` |
+| Módulo de práctica de clínicas y formulario web | ✅ Implementado en `feature/clinic-crud` (sección [20](#20-práctica-guiada-crud-de-clínicas)) |
 | Pruebas unitarias y de integración | ✅ Implementadas (sección [13](#13-pruebas)) |
 
 Scripts disponibles en `package.json`:
@@ -1192,7 +1193,7 @@ Códigos acordados: `400` validación de DTO, `404` recurso inexistente, `409` d
 npm run start:dev
 ```
 
-Abre `http://localhost:3000/api/docs`. La configuración (título, descripción, versión, servidor y los 6 tags) está centralizada en `src/swagger.config.ts` y la usa `src/main.ts`.
+Abre `http://localhost:3000/api/docs`. La configuración (título, descripción, versión, servidor y los 7 tags) está centralizada en `src/swagger.config.ts` y la usa `src/main.ts`.
 
 ### Cobertura de documentación
 
@@ -1205,6 +1206,11 @@ Abre `http://localhost:3000/api/docs`. La configuración (título, descripción,
 | categories | GET | `/categories/{id}/products` | 200 | 400, 404 |
 | categories | PATCH | `/categories/{id}` | 200 | 400, 404, 409 |
 | categories | DELETE | `/categories/{id}` | 204 | 400, 404, 409 |
+| clinics | POST | `/clinics` | 201 | 400, 409 |
+| clinics | GET | `/clinics` | 200 | — |
+| clinics | GET | `/clinics/{id}` | 200 | 400, 404 |
+| clinics | PATCH | `/clinics/{id}` | 200 | 400, 404, 409 |
+| clinics | DELETE | `/clinics/{id}` | 204 | 400, 404 |
 | products | POST | `/products` | 201 | 400, 404, 409 |
 | products | GET | `/products` | 200 | 400 |
 | products | GET | `/products/{id}` | 200 | 400, 404 |
@@ -1219,7 +1225,7 @@ Abre `http://localhost:3000/api/docs`. La configuración (título, descripción,
 | inventory | GET | `/inventory/out-of-stock` | 200 | 400 |
 | health | GET | `/health` | 200 | 503 |
 
-**Total: 13 rutas y 20 operaciones**, todas con `@ApiTags`, `@ApiOperation` y al menos una respuesta 2xx documentada.
+**Total: 15 rutas y 25 operaciones**, todas con `@ApiTags`, `@ApiOperation` y al menos una respuesta 2xx documentada.
 
 Parámetros de consulta relevantes:
 
@@ -1234,7 +1240,7 @@ Todos los `id` y `productId` de ruta usan `ParseUUIDPipe`, por lo que Swagger lo
 `test/swagger.e2e-spec.ts` genera el documento OpenAPI con la misma configuración que `main.ts` y comprueba que:
 
 1. El título, la versión y la descripción sean los esperados.
-2. Estén los 6 tags y las 13 rutas / 20 operaciones.
+2. Estén los 7 tags y las 15 rutas / 25 operaciones.
 3. Cada operación tenga `summary`, `tags` y una respuesta `2xx`.
 4. Estén los esquemas de entidades y DTOs, y que los parámetros de ruta sean UUID.
 
@@ -1246,4 +1252,52 @@ npm run test
 npm run test:e2e
 ```
 
-Evidencia sugerida para el PR: captura de `/api/docs` mostrando los tags `app`, `categories`, `products`, `inventory-movements`, `inventory` y `health`, y el resultado de `npm run test:e2e` con las 14 pruebas en verde (más 8 omitidas por no definir `TEST_DATABASE_URL`).
+Evidencia sugerida para el PR: captura de `/api/docs` mostrando los tags `app`, `categories`, `clinics`, `products`, `inventory-movements`, `inventory` y `health`, y el resultado de `npm run test:e2e` con todas las suites en verde.
+
+---
+
+## 20. Práctica guiada: CRUD de clínicas
+
+Esta sección existe para practicar **crear, listar, editar, eliminar y corregir errores** desde el propio proyecto. Está aislada en la rama `feature/clinic-crud`, creada desde `develop`.
+
+### Cómo abrir el formulario
+
+```bash
+npm run start:dev
+```
+
+Abre <http://localhost:3000/clinicas.html>. El formulario consume los endpoints y muestra el `statusCode` y el `message` que devuelve la API, para que puedas ver exactamente qué falló y por qué.
+
+### Endpoints
+
+| Método | Ruta | Qué hace |
+|---|---|---|
+| `POST` | `/clinics` | Crea una clínica. El `name` es único. |
+| `GET` | `/clinics` | Lista ordenado por nombre. |
+| `GET` | `/clinics/{id}` | Consulta por UUID. |
+| `PATCH` | `/clinics/{id}` | Edita sólo los campos enviados. |
+| `DELETE` | `/clinics/{id}` | Elimina la clínica y devuelve `204`. |
+
+El modelo `Clinic` y la migración `20261126203153_add_clinics` viven en `prisma/schema.prisma` y `prisma/migrations/`. Antes de probar, aplica la migración:
+
+```bash
+npm run migrate:deploy
+```
+
+### Ejercicios recomendados
+
+1. Crea una clínica y luego crea otra con el **mismo nombre**: verás un `409`.
+2. Envía un teléfono como `abc` o un correo sin `@`: verás un `400` con los mensajes de `class-validator`.
+3. Pulsa **Editar** en la tabla, cambia el nombre y guarda: eso dispara un `PATCH`.
+4. Elimina una clínica y vuelve a consultarla: verás un `404`.
+5. Desmarca **Clínica activa** en lugar de borrar: verás cómo el `PATCH` cambia `active` sin perder el registro.
+6. Compara el error en el formulario con la respuesta de Swagger en `/api/docs`.
+
+### Verificación
+
+```bash
+npm run test -- --runInBand
+npm run test:e2e -- --runInBand
+```
+
+Las pruebas unitarias están en `src/clinics/clinics.service.spec.ts` y las de integración HTTP en `test/clinics.e2e-spec.ts` (usan `TEST_DATABASE_URL`).

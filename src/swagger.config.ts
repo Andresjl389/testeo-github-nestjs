@@ -11,6 +11,11 @@ export const API_TAGS = [
     description: 'CRUD de categorías y consulta de sus productos',
   },
   {
+    name: 'clinics',
+    description:
+      'CRUD de práctica: crear, listar, editar y eliminar clínicas. Formulario en /clinicas.html',
+  },
+  {
     name: 'products',
     description:
       'CRUD de productos, búsqueda, filtros y paginación. El stock no se edita aquí: se modifica con movimientos.',

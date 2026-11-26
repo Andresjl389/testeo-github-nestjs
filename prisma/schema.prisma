@@ -63,3 +63,18 @@ model InventoryMovement {
   @@index([type, createdAt])
   @@map("inventory_movements")
 }
+
+model Clinic {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique @db.VarChar(120)
+  address   String   @db.VarChar(200)
+  phone     String   @db.VarChar(30)
+  email     String?  @db.VarChar(120)
+  specialty String?  @db.VarChar(120)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([active])
+  @@map("clinics")
+}
