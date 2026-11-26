@@ -163,7 +163,7 @@ El repositorio partió del proyecto base de NestJS (`nest new`) y ya incluye las
 | Swagger en `/api/docs` | ✅ Configurado y verificado automáticamente (sección [19](#19-swagger-y-endpoints-implementados)) |
 | Archivo `.env.example` | ✅ Creado |
 | Módulos de categorías, productos, movimientos y reportes | ✅ Implementados e integrados en `develop` |
-| Módulo de práctica de clínicas y formulario web | ✅ Implementado en `feature/clinic-crud` (sección [20](#20-práctica-guiada-crud-de-clínicas)) |
+| Módulo de práctica de clínicas, inventario, pacientes y citas | ✅ Implementado en `feature/clinic-crud` (secciones [20](#20-práctica-guiada-clínicas-con-inventario-independiente) y [21](#21-práctica-guiada-pacientes-citas-y-comentarios)) |
 | Pruebas unitarias y de integración | ✅ Implementadas (sección [13](#13-pruebas)) |
 
 Scripts disponibles en `package.json`:
@@ -1216,6 +1216,21 @@ Abre `http://localhost:3101/api/docs` (o el `PORT` que tengas configurado en `.e
 | clinics | GET | `/clinics/{clinicId}/items/{itemId}` | 200 | 400, 404 |
 | clinics | PATCH | `/clinics/{clinicId}/items/{itemId}` | 200 | 400, 404, 409 |
 | clinics | DELETE | `/clinics/{clinicId}/items/{itemId}` | 204 | 400, 404 |
+| patients | POST | `/clinics/{clinicId}/patients` | 201 | 400, 404, 409 |
+| patients | GET | `/clinics/{clinicId}/patients` | 200 | 400, 404 |
+| patients | GET | `/clinics/{clinicId}/patients/{patientId}` | 200 | 400, 404 |
+| patients | PATCH | `/clinics/{clinicId}/patients/{patientId}` | 200 | 400, 404, 409 |
+| patients | DELETE | `/clinics/{clinicId}/patients/{patientId}` | 204 | 400, 404 |
+| appointments | POST | `/clinics/{clinicId}/appointments` | 201 | 400, 404, 409 |
+| appointments | GET | `/clinics/{clinicId}/appointments` | 200 | 400, 404 |
+| appointments | GET | `/clinics/{clinicId}/appointments/{appointmentId}` | 200 | 400, 404 |
+| appointments | PATCH | `/clinics/{clinicId}/appointments/{appointmentId}` | 200 | 400, 404, 409 |
+| appointments | DELETE | `/clinics/{clinicId}/appointments/{appointmentId}` | 204 | 400, 404 |
+| comments | POST | `/clinics/{clinicId}/appointments/{appointmentId}/comments` | 201 | 400, 404 |
+| comments | GET | `/clinics/{clinicId}/appointments/{appointmentId}/comments` | 200 | 400, 404 |
+| comments | GET | `/clinics/{clinicId}/appointments/{appointmentId}/comments/{commentId}` | 200 | 400, 404 |
+| comments | PATCH | `/clinics/{clinicId}/appointments/{appointmentId}/comments/{commentId}` | 200 | 400, 404 |
+| comments | DELETE | `/clinics/{clinicId}/appointments/{appointmentId}/comments/{commentId}` | 204 | 400, 404 |
 | products | POST | `/products` | 201 | 400, 404, 409 |
 | products | GET | `/products` | 200 | 400 |
 | products | GET | `/products/{id}` | 200 | 400, 404 |
@@ -1230,7 +1245,7 @@ Abre `http://localhost:3101/api/docs` (o el `PORT` que tengas configurado en `.e
 | inventory | GET | `/inventory/out-of-stock` | 200 | 400 |
 | health | GET | `/health` | 200 | 503 |
 
-**Total: 17 rutas y 30 operaciones**, todas con `@ApiTags`, `@ApiOperation` y al menos una respuesta 2xx documentada.
+**Total: 23 rutas y 45 operaciones**, todas con `@ApiTags`, `@ApiOperation` y al menos una respuesta 2xx documentada.
 
 Parámetros de consulta relevantes:
 
@@ -1245,7 +1260,7 @@ Todos los `id` y `productId` de ruta usan `ParseUUIDPipe`, por lo que Swagger lo
 `test/swagger.e2e-spec.ts` genera el documento OpenAPI con la misma configuración que `main.ts` y comprueba que:
 
 1. El título, la versión y la descripción sean los esperados.
-2. Estén los 7 tags y las 17 rutas / 30 operaciones.
+2. Estén los 10 tags y las 23 rutas / 45 operaciones.
 3. Cada operación tenga `summary`, `tags` y una respuesta `2xx`.
 4. Estén los esquemas de entidades y DTOs, y que los parámetros de ruta sean UUID.
 
@@ -1257,7 +1272,7 @@ npm run test
 npm run test:e2e
 ```
 
-Evidencia sugerida para el PR: captura de `/api/docs` mostrando los tags `app`, `categories`, `clinics`, `products`, `inventory-movements`, `inventory` y `health`, y el resultado de `npm run test:e2e` con todas las suites en verde.
+Evidencia sugerida para el PR: captura de `/api/docs` mostrando los tags `app`, `categories`, `clinics`, `patients`, `appointments`, `comments`, `products`, `inventory-movements`, `inventory` y `health`, y el resultado de `npm run test:e2e` con todas las suites en verde.
 
 ---
 
@@ -1331,3 +1346,64 @@ npm run test:e2e -- --runInBand
 ```
 
 Las pruebas unitarias están en `src/clinics/clinics.service.spec.ts` y `src/clinics/clinic-items.service.spec.ts`; las de integración HTTP en `test/clinics.e2e-spec.ts` y `test/clinic-items.e2e-spec.ts` (usan `TEST_DATABASE_URL`).
+
+---
+
+## 21. Práctica guiada: pacientes, citas y comentarios
+
+Cada clínica tiene su propia agenda. Todo se guarda en PostgreSQL y se gestiona desde el mismo formulario de `/clinicas.html`.
+
+### Cómo usarlo
+
+1. En la tabla de clínicas, pulsa **Pacientes y citas** en la fila correspondiente.
+2. Registra pacientes (nombre, documento, teléfono, correo, fecha de nacimiento, notas y activo). El documento es único dentro de esa clínica; el mismo documento en otra clínica sí se permite.
+3. Programa la cita eligiendo paciente, fecha, hora, duración, estado, motivo y notas.
+4. En la tabla de citas, pulsa **Comentarios** para abrir el historial de esa cita y agregar notas con autor y fecha.
+
+### Reglas de la agenda
+
+- La cita debe programarse en el futuro (`400` si no).
+- Dos citas activas de la misma clínica no pueden cruzarse (`409`); las canceladas no bloquean el horario.
+- La duración va de 5 a 480 minutos; por defecto es 30.
+- Los estados son `PENDING`, `CONFIRMED`, `COMPLETED` y `CANCELLED`.
+- Al eliminar un paciente se borran sus citas y comentarios; al eliminar una clínica se borran sus pacientes, citas y comentarios.
+
+### Endpoints
+
+| Método | Ruta | Qué hace |
+|---|---|---|
+| `POST` | `/clinics/{clinicId}/patients` | Registra un paciente en la clínica. |
+| `GET` | `/clinics/{clinicId}/patients` | Lista sus pacientes. |
+| `GET` | `/clinics/{clinicId}/patients/{patientId}` | Consulta un paciente. |
+| `PATCH` | `/clinics/{clinicId}/patients/{patientId}` | Edita el paciente. |
+| `DELETE` | `/clinics/{clinicId}/patients/{patientId}` | Elimina el paciente y sus citas. |
+| `POST` | `/clinics/{clinicId}/appointments` | Programa una cita validando fecha y solape. |
+| `GET` | `/clinics/{clinicId}/appointments` | Lista citas; acepta `?status=&date=`. |
+| `GET` | `/clinics/{clinicId}/appointments/{appointmentId}` | Consulta una cita. |
+| `PATCH` | `/clinics/{clinicId}/appointments/{appointmentId}` | Reprograma o cambia el estado. |
+| `DELETE` | `/clinics/{clinicId}/appointments/{appointmentId}` | Elimina la cita y sus comentarios. |
+| `POST` | `/clinics/{clinicId}/appointments/{appointmentId}/comments` | Agrega un comentario al historial. |
+| `GET` | `/clinics/{clinicId}/appointments/{appointmentId}/comments` | Lista el historial. |
+| `GET` | `/clinics/{clinicId}/appointments/{appointmentId}/comments/{commentId}` | Consulta un comentario. |
+| `PATCH` | `/clinics/{clinicId}/appointments/{appointmentId}/comments/{commentId}` | Edita un comentario. |
+| `DELETE` | `/clinics/{clinicId}/appointments/{appointmentId}/comments/{commentId}` | Elimina un comentario. |
+
+Los modelos `ClinicPatient`, `Appointment` y `AppointmentComment` y la migración `20261126205658_add_patients_appointments_comments` están en `prisma/schema.prisma` y `prisma/migrations/`.
+
+### Ejercicios recomendados
+
+1. Registra dos pacientes con el **mismo documento** en la misma clínica: `409`. Repite en otra clínica: se permite.
+2. Programa una cita para mañana; luego intenta otra 10 minutos después: `409`.
+3. Cancela la primera cita y vuelve a programar ese horario: ahora se permite.
+4. Envía una fecha pasada en el formulario: `400` con el mensaje de la API.
+5. Abre **Comentarios** de una cita y agrega dos notas con distintos autores: se acumulan con fecha.
+6. Elimina un paciente con citas: verás cómo desaparecen sus citas y comentarios.
+
+### Verificación
+
+```bash
+npm run test -- --runInBand
+npm run test:e2e -- --runInBand
+```
+
+Las pruebas unitarias están en `src/patients/patients.service.spec.ts`, `src/appointments/appointments.service.spec.ts` y `src/appointment-comments/appointment-comments.service.spec.ts`. Las de integración HTTP están en `test/care.e2e-spec.ts` (usa `TEST_DATABASE_URL`).

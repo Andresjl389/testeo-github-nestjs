@@ -19,6 +19,15 @@ enum MovementType {
   @@map("movement_type")
 }
 
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+
+  @@map("appointment_status")
+}
+
 model Category {
   id          String    @id @default(uuid()) @db.Uuid
   name        String    @unique @db.VarChar(120)
@@ -74,7 +83,9 @@ model Clinic {
   active    Boolean  @default(true)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-  items     ClinicInventoryItem[]
+  items        ClinicInventoryItem[]
+  patients     ClinicPatient[]
+  appointments Appointment[]
 
   @@index([active])
   @@map("clinics")
@@ -96,4 +107,56 @@ model ClinicInventoryItem {
   @@unique([clinicId, name])
   @@index([clinicId, name])
   @@map("clinic_inventory_items")
+}
+
+model ClinicPatient {
+  id           String        @id @default(uuid()) @db.Uuid
+  clinicId     String        @map("clinic_id") @db.Uuid
+  clinic       Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  name         String        @db.VarChar(120)
+  document     String?       @db.VarChar(30)
+  phone        String        @db.VarChar(30)
+  email        String?       @db.VarChar(120)
+  birthDate    DateTime?     @map("birth_date") @db.Date
+  notes        String?       @db.VarChar(500)
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  appointments Appointment[]
+
+  @@unique([clinicId, document])
+  @@index([clinicId, name])
+  @@map("clinic_patients")
+}
+
+model Appointment {
+  id              String                @id @default(uuid()) @db.Uuid
+  clinicId        String                @map("clinic_id") @db.Uuid
+  clinic          Clinic                @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patientId       String                @map("patient_id") @db.Uuid
+  patient         ClinicPatient         @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  scheduledAt     DateTime              @map("scheduled_at") @db.Timestamptz(6)
+  durationMinutes Int                   @default(30) @map("duration_minutes")
+  reason          String                @db.VarChar(255)
+  status          AppointmentStatus     @default(PENDING)
+  notes           String?               @db.VarChar(1000)
+  createdAt       DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  comments        AppointmentComment[]
+
+  @@index([clinicId, scheduledAt])
+  @@index([patientId, scheduledAt])
+  @@map("appointments")
+}
+
+model AppointmentComment {
+  id            String      @id @default(uuid()) @db.Uuid
+  appointmentId String      @map("appointment_id") @db.Uuid
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  author        String      @db.VarChar(80)
+  body          String      @db.VarChar(1000)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([appointmentId, createdAt])
+  @@map("appointment_comments")
 }

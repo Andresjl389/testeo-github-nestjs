@@ -2,12 +2,15 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AppointmentCommentsModule } from './appointment-comments/appointment-comments.module';
+import { AppointmentsModule } from './appointments/appointments.module';
 import { validateEnvironment } from './config/env.validation';
 import { CategoriesModule } from './categories/categories.module';
 import { ClinicsModule } from './clinics/clinics.module';
 import { HealthModule } from './health/health.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { InventoryMovementsModule } from './inventory-movements/inventory-movements.module';
+import { PatientsModule } from './patients/patients.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProductsModule } from './products/products.module';
 
@@ -31,6 +34,9 @@ const isTest = process.env.NODE_ENV === 'test';
     PrismaModule,
     CategoriesModule,
     ClinicsModule,
+    PatientsModule,
+    AppointmentsModule,
+    AppointmentCommentsModule,
     InventoryMovementsModule,
     ProductsModule,
     InventoryModule,

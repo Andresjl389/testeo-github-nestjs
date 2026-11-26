@@ -13,7 +13,21 @@ export const API_TAGS = [
   {
     name: 'clinics',
     description:
-      'CRUD de práctica de clínicas y de su inventario independiente. Formulario en /clinicas.html',
+      'CRUD de práctica de clínicas, su inventario, pacientes y citas. Formulario en /clinicas.html',
+  },
+  {
+    name: 'patients',
+    description:
+      'Pacientes registrados por clínica; el documento es único dentro de cada una.',
+  },
+  {
+    name: 'appointments',
+    description:
+      'Citas con fecha, hora, duración y estado; validan fecha futura y solapamiento.',
+  },
+  {
+    name: 'comments',
+    description: 'Historial de comentarios y seguimiento de cada cita.',
   },
   {
     name: 'products',

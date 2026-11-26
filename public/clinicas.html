@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Práctica CRUD · Clínicas e inventario</title>
+    <title>Práctica CRUD · Clínicas, inventario y citas</title>
     <style>
       :root {
         color-scheme: light;
@@ -54,7 +54,8 @@
       }
       label { display: flex; flex-direction: column; gap: 7px; font-weight: 600; font-size: 14px; }
       label.full { grid-column: 1 / -1; }
-      input, textarea {
+      h3 { margin: 26px 0 12px; font-size: 17px; }
+      input, textarea, select {
         width: 100%;
         border: 1px solid #ccd6e5;
         border-radius: 10px;
@@ -65,7 +66,7 @@
         outline: none;
         transition: border-color 0.15s, box-shadow 0.15s;
       }
-      input:focus, textarea:focus {
+      input:focus, textarea:focus, select:focus {
         border-color: #4c6ef5;
         box-shadow: 0 0 0 3px rgba(76, 110, 245, 0.15);
       }
@@ -147,8 +148,8 @@
     <main class="wrap">
       <header>
         <div>
-          <h1>Práctica CRUD · Clínicas e inventario</h1>
-          <p>Cada clínica tiene su propio inventario. Crea, edita, elimina y provoca errores.</p>
+          <h1>Práctica CRUD · Clínicas, inventario y citas</h1>
+          <p>Cada clínica tiene sus propios insumos, pacientes, citas y comentarios.</p>
         </div>
         <a class="docs" href="/api/docs">Ver Swagger →</a>
       </header>
@@ -267,6 +268,139 @@
           </tbody>
         </table>
       </section>
+
+      <section class="card list" id="care-panel" hidden>
+        <div class="list-head">
+          <div>
+            <h2 id="care-title">Pacientes y citas</h2>
+            <p class="subtitle" id="care-subtitle"></p>
+          </div>
+          <button class="secondary" id="back-to-clinics-care" type="button">← Volver a clínicas</button>
+        </div>
+
+        <h3>Pacientes</h3>
+        <form id="patient-form" novalidate>
+          <label>
+            Nombre *
+            <input id="patient-name" required maxlength="120" placeholder="Ana Torres" />
+          </label>
+          <label>
+            Documento
+            <input id="patient-document" maxlength="30" placeholder="CC 1234567890" />
+          </label>
+          <label>
+            Teléfono *
+            <input id="patient-phone" required maxlength="30" placeholder="+57 300 1234567" />
+          </label>
+          <label>
+            Correo
+            <input id="patient-email" type="email" maxlength="120" placeholder="ana@example.com" />
+          </label>
+          <label>
+            Fecha de nacimiento
+            <input id="patient-birth" type="date" />
+          </label>
+          <label>
+            Notas
+            <input id="patient-notes" maxlength="500" placeholder="Alergia a penicilina" />
+          </label>
+          <label class="check">
+            <input id="patient-active" type="checkbox" checked />
+            Paciente activo
+          </label>
+          <div class="actions">
+            <button class="primary" id="patient-submit" type="submit">Registrar paciente</button>
+            <button class="secondary" id="cancel-patient-edit" type="button" hidden>Cancelar edición</button>
+            <span>Repite el documento para provocar un <code>409</code>.</span>
+          </div>
+        </form>
+        <p class="message" id="patient-message" data-kind="info" hidden></p>
+        <table>
+          <thead>
+            <tr><th>Paciente</th><th>Documento</th><th>Teléfono</th><th>Estado</th><th>Acciones</th></tr>
+          </thead>
+          <tbody id="patients-body">
+            <tr><td colspan="5">Selecciona una clínica para ver sus pacientes.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Citas</h3>
+        <form id="appointment-form" novalidate>
+          <label>
+            Paciente *
+            <select id="appointment-patient" required></select>
+          </label>
+          <label>
+            Motivo *
+            <input id="appointment-reason" required maxlength="255" placeholder="Control general" />
+          </label>
+          <label>
+            Fecha *
+            <input id="appointment-date" type="date" required />
+          </label>
+          <label>
+            Hora *
+            <input id="appointment-time" type="time" required />
+          </label>
+          <label>
+            Duración (min)
+            <input id="appointment-duration" type="number" min="5" max="480" value="30" />
+          </label>
+          <label>
+            Estado
+            <select id="appointment-status">
+              <option value="PENDING">Pendiente</option>
+              <option value="CONFIRMED">Confirmada</option>
+              <option value="COMPLETED">Completada</option>
+              <option value="CANCELLED">Cancelada</option>
+            </select>
+          </label>
+          <label class="full">
+            Notas
+            <textarea id="appointment-notes" maxlength="1000" placeholder="Llegar 10 minutos antes"></textarea>
+          </label>
+          <div class="actions">
+            <button class="primary" id="appointment-submit" type="submit">Programar cita</button>
+            <button class="secondary" id="cancel-appointment-edit" type="button" hidden>Cancelar edición</button>
+            <span>La fecha debe ser futura y no debe cruzarse con otra cita.</span>
+          </div>
+        </form>
+        <p class="message" id="appointment-message" data-kind="info" hidden></p>
+        <table>
+          <thead>
+            <tr><th>Fecha y hora</th><th>Paciente</th><th>Motivo</th><th>Duración</th><th>Estado</th><th>Acciones</th></tr>
+          </thead>
+          <tbody id="appointments-body">
+            <tr><td colspan="6">Aún no hay citas en esta clínica.</td></tr>
+          </tbody>
+        </table>
+
+        <div id="comments-panel" hidden>
+          <h3 id="comments-title">Historial de comentarios</h3>
+          <form id="comment-form" novalidate>
+            <label>
+              Autor *
+              <input id="comment-author" required maxlength="80" placeholder="Recepcion" />
+            </label>
+            <label>
+              Comentario *
+              <textarea id="comment-body" required maxlength="1000" placeholder="Confirmó la asistencia por teléfono"></textarea>
+            </label>
+            <div class="actions">
+              <button class="primary" id="comment-submit" type="submit">Agregar comentario</button>
+            </div>
+          </form>
+          <p class="message" id="comment-message" data-kind="info" hidden></p>
+          <table>
+            <thead>
+              <tr><th>Fecha</th><th>Autor</th><th>Comentario</th><th>Acciones</th></tr>
+            </thead>
+            <tbody id="comments-body">
+              <tr><td colspan="4">Sin comentarios todavía.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
     </main>
 
     <script>
@@ -310,7 +444,7 @@
         const detail = Array.isArray(error?.message)
           ? error.message.join(', ')
           : (error?.message || error || 'Error desconocido');
-        return `${error?.status || 'Error'}: ${String(detail)}`;
+        return `${error?.status ? `${error.status}: ` : ''}${String(detail)}`;
       }
 
       async function request(url, options = {}) {
@@ -375,7 +509,7 @@
         }
 
         clinicsBody.innerHTML = clinics.map((clinic) => `
-          <tr class="${clinic.id === selectedClinicId ? 'selected' : ''}">
+          <tr class="${clinic.id === selectedClinicId || clinic.id === careClinicId ? 'selected' : ''}">
             <td><strong>${escapeHtml(clinic.name)}</strong><br /><code>${escapeHtml(clinic.id)}</code></td>
             <td>${escapeHtml(clinic.phone)}</td>
             <td>${escapeHtml(clinic.address)}</td>
@@ -383,6 +517,7 @@
             <td>
               <div class="row-actions">
                 <button class="small" type="button" data-action="inventory" data-id="${escapeHtml(clinic.id)}" data-name="${escapeHtml(clinic.name)}">Inventario</button>
+                <button class="small" type="button" data-action="care" data-id="${escapeHtml(clinic.id)}" data-name="${escapeHtml(clinic.name)}">Pacientes y citas</button>
                 <button class="small" type="button" data-action="edit" data-id="${escapeHtml(clinic.id)}">Editar</button>
                 <button class="danger" type="button" data-action="delete" data-id="${escapeHtml(clinic.id)}">Eliminar</button>
               </div>
@@ -456,10 +591,16 @@
             await request(`${CLINICS_API}/${id}`, { method: 'DELETE' });
             showMessage(clinicMessage, 'Clínica eliminada.', 'success');
             if (selectedClinicId === id) hideInventory();
+            if (careClinicId === id) hideCare();
             await loadClinics();
           } catch (error) {
             showMessage(clinicMessage, messageFrom(error), 'error');
           }
+        }
+
+        if (action === 'care') {
+          await openCare(id, button.dataset.name);
+          return;
         }
 
         if (action === 'inventory') {
@@ -612,6 +753,418 @@
             showMessage(itemMessage, messageFrom(error), 'error');
           }
         }
+      });
+
+      const carePanel = document.getElementById('care-panel');
+      const careTitle = document.getElementById('care-title');
+      const careSubtitle = document.getElementById('care-subtitle');
+      const patientForm = document.getElementById('patient-form');
+      const patientMessage = document.getElementById('patient-message');
+      const patientSubmitButton = document.getElementById('patient-submit');
+      const cancelPatientButton = document.getElementById('cancel-patient-edit');
+      const patientsBody = document.getElementById('patients-body');
+      const appointmentForm = document.getElementById('appointment-form');
+      const appointmentMessage = document.getElementById('appointment-message');
+      const appointmentSubmitButton = document.getElementById('appointment-submit');
+      const cancelAppointmentButton = document.getElementById('cancel-appointment-edit');
+      const appointmentPatient = document.getElementById('appointment-patient');
+      const appointmentDate = document.getElementById('appointment-date');
+      const appointmentTime = document.getElementById('appointment-time');
+      const appointmentDuration = document.getElementById('appointment-duration');
+      const appointmentStatus = document.getElementById('appointment-status');
+      const appointmentReason = document.getElementById('appointment-reason');
+      const appointmentNotes = document.getElementById('appointment-notes');
+      const appointmentsBody = document.getElementById('appointments-body');
+      const commentsPanel = document.getElementById('comments-panel');
+      const commentsTitle = document.getElementById('comments-title');
+      const commentForm = document.getElementById('comment-form');
+      const commentMessage = document.getElementById('comment-message');
+      const commentAuthor = document.getElementById('comment-author');
+      const commentBody = document.getElementById('comment-body');
+      const commentsBody = document.getElementById('comments-body');
+
+      let careClinicId = null;
+      let editingPatientId = null;
+      let editingAppointmentId = null;
+      let activeAppointmentId = null;
+
+      function patientsUrl() {
+        return `${CLINICS_API}/${careClinicId}/patients`;
+      }
+
+      function appointmentsUrl() {
+        return `${CLINICS_API}/${careClinicId}/appointments`;
+      }
+
+      function commentsUrl(appointmentId) {
+        return `${appointmentsUrl()}/${appointmentId}/comments`;
+      }
+
+      function patientDtoFromForm() {
+        return {
+          name: document.getElementById('patient-name').value.trim(),
+          document: document.getElementById('patient-document').value.trim() || undefined,
+          phone: document.getElementById('patient-phone').value.trim(),
+          email: document.getElementById('patient-email').value.trim() || undefined,
+          birthDate: document.getElementById('patient-birth').value || undefined,
+          notes: document.getElementById('patient-notes').value.trim() || undefined,
+          active: document.getElementById('patient-active').checked,
+        };
+      }
+
+      function fillPatientForm(patient) {
+        document.getElementById('patient-name').value = patient.name ?? '';
+        document.getElementById('patient-document').value = patient.document ?? '';
+        document.getElementById('patient-phone').value = patient.phone ?? '';
+        document.getElementById('patient-email').value = patient.email ?? '';
+        document.getElementById('patient-birth').value = patient.birthDate
+          ? String(patient.birthDate).slice(0, 10)
+          : '';
+        document.getElementById('patient-notes').value = patient.notes ?? '';
+        document.getElementById('patient-active').checked = Boolean(patient.active);
+      }
+
+      function resetPatientForm() {
+        patientForm.reset();
+        document.getElementById('patient-active').checked = true;
+        editingPatientId = null;
+        patientSubmitButton.textContent = 'Registrar paciente';
+        cancelPatientButton.hidden = true;
+      }
+
+      function renderPatients(patients) {
+        if (!patients.length) {
+          patientsBody.innerHTML = '<tr><td colspan="5">Esta clínica aún no tiene pacientes.</td></tr>';
+          return;
+        }
+
+        patientsBody.innerHTML = patients.map((patient) => `
+          <tr>
+            <td><strong>${escapeHtml(patient.name)}</strong><br /><code>${escapeHtml(patient.id)}</code></td>
+            <td>${patient.document ? escapeHtml(patient.document) : '—'}</td>
+            <td>${escapeHtml(patient.phone)}</td>
+            <td><span class="pill ${patient.active ? 'on' : 'off'}">${patient.active ? 'Activo' : 'Inactivo'}</span></td>
+            <td>
+              <div class="row-actions">
+                <button class="small" type="button" data-action="edit-patient" data-id="${escapeHtml(patient.id)}">Editar</button>
+                <button class="danger" type="button" data-action="delete-patient" data-id="${escapeHtml(patient.id)}">Eliminar</button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      async function loadPatients() {
+        const patients = await request(patientsUrl());
+        renderPatients(patients);
+        showMessage(patientMessage, `${patients.length} paciente(s) cargados.`, 'info');
+        return patients;
+      }
+
+      async function loadPatientOptions() {
+        const patients = await request(patientsUrl());
+        const previous = appointmentPatient.value;
+        appointmentPatient.innerHTML = patients.length
+          ? patients.map((patient) => `<option value="${escapeHtml(patient.id)}">${escapeHtml(patient.name)}${patient.document ? ' · ' + escapeHtml(patient.document) : ''}</option>`).join('')
+          : '<option value="">Registra un paciente primero</option>';
+        if (previous && patients.some((patient) => patient.id === previous)) {
+          appointmentPatient.value = previous;
+        }
+      }
+
+      function appointmentDtoFromForm() {
+        const date = appointmentDate.value;
+        const time = appointmentTime.value;
+        if (!appointmentPatient.value) throw new Error('Registra un paciente primero');
+        if (!date || !time) throw new Error('La fecha y la hora son obligatorias');
+        const scheduledAt = new Date(`${date}T${time}:00.000Z`);
+        if (Number.isNaN(scheduledAt.getTime())) throw new Error('Fecha o hora no válidas');
+
+        return {
+          patientId: appointmentPatient.value,
+          scheduledAt: scheduledAt.toISOString(),
+          durationMinutes: Number(appointmentDuration.value || 30),
+          status: appointmentStatus.value,
+          reason: appointmentReason.value.trim(),
+          notes: appointmentNotes.value.trim() || undefined,
+        };
+      }
+
+      function fillAppointmentForm(appointment) {
+        const scheduled = new Date(appointment.scheduledAt);
+        appointmentPatient.value = appointment.patientId;
+        appointmentDate.value = scheduled.toISOString().slice(0, 10);
+        appointmentTime.value = scheduled.toISOString().slice(11, 16);
+        appointmentDuration.value = appointment.durationMinutes;
+        appointmentStatus.value = appointment.status;
+        appointmentReason.value = appointment.reason ?? '';
+        appointmentNotes.value = appointment.notes ?? '';
+      }
+
+      function resetAppointmentForm() {
+        appointmentForm.reset();
+        appointmentDuration.value = 30;
+        appointmentStatus.value = 'PENDING';
+        editingAppointmentId = null;
+        appointmentSubmitButton.textContent = 'Programar cita';
+        cancelAppointmentButton.hidden = true;
+      }
+
+      function renderAppointments(appointments) {
+        if (!appointments.length) {
+          appointmentsBody.innerHTML = '<tr><td colspan="6">Aún no hay citas en esta clínica.</td></tr>';
+          return;
+        }
+
+        appointmentsBody.innerHTML = appointments.map((appointment) => {
+          const scheduled = new Date(appointment.scheduledAt);
+          const label = scheduled.toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+          const statusClass = appointment.status === 'CANCELLED'
+            ? 'off'
+            : appointment.status === 'CONFIRMED' || appointment.status === 'COMPLETED'
+              ? 'on'
+              : 'warn';
+          return `
+            <tr>
+              <td><strong>${escapeHtml(label)}</strong><br /><code>${escapeHtml(appointment.id)}</code></td>
+              <td>${escapeHtml(appointment.patient?.name || appointment.patientId)}</td>
+              <td>${escapeHtml(appointment.reason)}</td>
+              <td>${appointment.durationMinutes} min</td>
+              <td><span class="pill ${statusClass}">${escapeHtml(appointment.status)}</span></td>
+              <td>
+                <div class="row-actions">
+                  <button class="small" type="button" data-action="comments" data-id="${escapeHtml(appointment.id)}" data-reason="${escapeHtml(appointment.reason)}">Comentarios</button>
+                  <button class="small" type="button" data-action="edit-appointment" data-id="${escapeHtml(appointment.id)}">Editar</button>
+                  <button class="danger" type="button" data-action="delete-appointment" data-id="${escapeHtml(appointment.id)}">Eliminar</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      async function loadAppointments() {
+        const appointments = await request(appointmentsUrl());
+        renderAppointments(appointments);
+        showMessage(appointmentMessage, `${appointments.length} cita(s) cargadas.`, 'info');
+      }
+
+      function renderComments(comments) {
+        if (!comments.length) {
+          commentsBody.innerHTML = '<tr><td colspan="4">Sin comentarios todavía.</td></tr>';
+          return;
+        }
+
+        commentsBody.innerHTML = comments.map((comment) => `
+          <tr>
+            <td>${escapeHtml(new Date(comment.createdAt).toISOString().slice(0, 16).replace('T', ' '))}</td>
+            <td><strong>${escapeHtml(comment.author)}</strong></td>
+            <td>${escapeHtml(comment.body)}</td>
+            <td><button class="danger" type="button" data-action="delete-comment" data-id="${escapeHtml(comment.id)}">Eliminar</button></td>
+          </tr>
+        `).join('');
+      }
+
+      async function loadComments() {
+        const comments = await request(commentsUrl(activeAppointmentId));
+        renderComments(comments);
+        showMessage(commentMessage, `${comments.length} comentario(s) en el historial.`, 'info');
+      }
+
+      async function openComments(appointmentId, reason) {
+        activeAppointmentId = appointmentId;
+        commentsPanel.hidden = false;
+        commentsTitle.textContent = `Historial de comentarios · ${reason || 'cita'}`;
+        commentForm.reset();
+        try {
+          await loadComments();
+          commentsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } catch (error) {
+          showMessage(commentMessage, messageFrom(error), 'error');
+        }
+      }
+
+      async function openCare(clinicId, clinicName) {
+        careClinicId = clinicId;
+        careTitle.textContent = `Pacientes y citas de ${clinicName || 'la clínica'}`;
+        careSubtitle.textContent = `Clínica ${clinicId}`;
+        carePanel.hidden = false;
+        activeAppointmentId = null;
+        commentsPanel.hidden = true;
+        resetPatientForm();
+        resetAppointmentForm();
+        await loadClinics();
+        try {
+          await loadPatients();
+          await loadPatientOptions();
+          await loadAppointments();
+        } catch (error) {
+          showMessage(patientMessage, messageFrom(error), 'error');
+        }
+        carePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      function hideCare() {
+        careClinicId = null;
+        activeAppointmentId = null;
+        carePanel.hidden = true;
+        commentsPanel.hidden = true;
+        resetPatientForm();
+        resetAppointmentForm();
+        loadClinics().catch(() => undefined);
+      }
+
+      patientForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const dto = patientDtoFromForm();
+        try {
+          if (editingPatientId) {
+            await request(`${patientsUrl()}/${editingPatientId}`, { method: 'PATCH', body: JSON.stringify(dto) });
+            showMessage(patientMessage, 'Paciente actualizado.', 'success');
+          } else {
+            await request(patientsUrl(), { method: 'POST', body: JSON.stringify(dto) });
+            showMessage(patientMessage, 'Paciente registrado.', 'success');
+          }
+          resetPatientForm();
+          await loadPatients();
+          await loadPatientOptions();
+        } catch (error) {
+          showMessage(patientMessage, messageFrom(error), 'error');
+        }
+      });
+
+      cancelPatientButton.addEventListener('click', () => {
+        resetPatientForm();
+        showMessage(patientMessage, 'Edición cancelada.', 'info');
+      });
+
+      patientsBody.addEventListener('click', async (event) => {
+        const button = event.target.closest('button[data-action]');
+        if (!button) return;
+        const id = button.dataset.id;
+
+        if (button.dataset.action === 'edit-patient') {
+          try {
+            const patient = await request(`${patientsUrl()}/${id}`);
+            fillPatientForm(patient);
+            editingPatientId = id;
+            patientSubmitButton.textContent = 'Guardar cambios';
+            cancelPatientButton.hidden = false;
+            showMessage(patientMessage, 'Editando paciente.', 'info');
+            patientForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          } catch (error) {
+            showMessage(patientMessage, messageFrom(error), 'error');
+          }
+        }
+
+        if (button.dataset.action === 'delete-patient') {
+          if (!window.confirm('¿Eliminar este paciente? Sus citas y comentarios también se borrarán.')) return;
+          try {
+            await request(`${patientsUrl()}/${id}`, { method: 'DELETE' });
+            showMessage(patientMessage, 'Paciente eliminado.', 'success');
+            await loadPatients();
+            await loadPatientOptions();
+            await loadAppointments();
+          } catch (error) {
+            showMessage(patientMessage, messageFrom(error), 'error');
+          }
+        }
+      });
+
+      appointmentForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        try {
+          const dto = appointmentDtoFromForm();
+          if (editingAppointmentId) {
+            await request(`${appointmentsUrl()}/${editingAppointmentId}`, { method: 'PATCH', body: JSON.stringify(dto) });
+            showMessage(appointmentMessage, 'Cita actualizada.', 'success');
+          } else {
+            await request(appointmentsUrl(), { method: 'POST', body: JSON.stringify(dto) });
+            showMessage(appointmentMessage, 'Cita programada.', 'success');
+          }
+          resetAppointmentForm();
+          await loadAppointments();
+        } catch (error) {
+          showMessage(appointmentMessage, messageFrom(error), 'error');
+        }
+      });
+
+      cancelAppointmentButton.addEventListener('click', () => {
+        resetAppointmentForm();
+        showMessage(appointmentMessage, 'Edición cancelada.', 'info');
+      });
+
+      appointmentsBody.addEventListener('click', async (event) => {
+        const button = event.target.closest('button[data-action]');
+        if (!button) return;
+        const id = button.dataset.id;
+
+        if (button.dataset.action === 'comments') {
+          await openComments(id, button.dataset.reason);
+        }
+
+        if (button.dataset.action === 'edit-appointment') {
+          try {
+            const appointment = await request(`${appointmentsUrl()}/${id}`);
+            await loadPatientOptions();
+            fillAppointmentForm(appointment);
+            editingAppointmentId = id;
+            appointmentSubmitButton.textContent = 'Guardar cambios';
+            cancelAppointmentButton.hidden = false;
+            showMessage(appointmentMessage, 'Editando cita. Guarda para aplicar el PATCH.', 'info');
+            appointmentForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          } catch (error) {
+            showMessage(appointmentMessage, messageFrom(error), 'error');
+          }
+        }
+
+        if (button.dataset.action === 'delete-appointment') {
+          if (!window.confirm('¿Eliminar esta cita? Su historial de comentarios también se borrará.')) return;
+          try {
+            await request(`${appointmentsUrl()}/${id}`, { method: 'DELETE' });
+            showMessage(appointmentMessage, 'Cita eliminada.', 'success');
+            if (activeAppointmentId === id) commentsPanel.hidden = true;
+            await loadAppointments();
+          } catch (error) {
+            showMessage(appointmentMessage, messageFrom(error), 'error');
+          }
+        }
+      });
+
+      commentForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        try {
+          await request(commentsUrl(activeAppointmentId), {
+            method: 'POST',
+            body: JSON.stringify({
+              author: commentAuthor.value.trim(),
+              body: commentBody.value.trim(),
+            }),
+          });
+          commentForm.reset();
+          showMessage(commentMessage, 'Comentario agregado al historial.', 'success');
+          await loadComments();
+        } catch (error) {
+          showMessage(commentMessage, messageFrom(error), 'error');
+        }
+      });
+
+      commentsBody.addEventListener('click', async (event) => {
+        const button = event.target.closest('button[data-action="delete-comment"]');
+        if (!button) return;
+        if (!window.confirm('¿Eliminar este comentario?')) return;
+        try {
+          await request(`${commentsUrl(activeAppointmentId)}/${button.dataset.id}`, { method: 'DELETE' });
+          showMessage(commentMessage, 'Comentario eliminado.', 'success');
+          await loadComments();
+        } catch (error) {
+          showMessage(commentMessage, messageFrom(error), 'error');
+        }
+      });
+
+      document.getElementById('back-to-clinics-care').addEventListener('click', () => {
+        hideCare();
+        clinicListCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
 
       loadClinics().catch((error) => {
