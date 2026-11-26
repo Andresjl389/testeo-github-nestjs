@@ -14,6 +14,7 @@ describe('Swagger (documentación completa)', () => {
 
   const expectedOperations: Record<string, HttpMethod[]> = {
     '/': ['get'],
+    '/agenda': ['get'],
     '/categories': ['post', 'get'],
     '/categories/{id}': ['get', 'patch', 'delete'],
     '/categories/{id}/products': ['get'],
@@ -66,7 +67,7 @@ describe('Swagger (documentación completa)', () => {
     await app.close();
   });
 
-  it('expone metadatos y los 10 tags del proyecto', () => {
+  it('expone metadatos y los 11 tags del proyecto', () => {
     expect(document.info.title).toBe('Inventory Management API');
     expect(document.info.version).toBe('1.0');
     expect(document.info.description).toContain('data, total, page, limit');
@@ -75,7 +76,7 @@ describe('Swagger (documentación completa)', () => {
     );
   });
 
-  it('documenta las 23 rutas y las 45 operaciones esperadas', () => {
+  it('documenta las 24 rutas y las 46 operaciones esperadas', () => {
     expect(Object.keys(document.paths).sort()).toEqual(
       Object.keys(expectedOperations).sort(),
     );
@@ -88,7 +89,7 @@ describe('Swagger (documentación completa)', () => {
         operations += 1;
       }
     }
-    expect(operations).toBe(45);
+    expect(operations).toBe(46);
   });
 
   it('toda operación tiene summary, tags y una respuesta 2xx', () => {
@@ -115,6 +116,7 @@ describe('Swagger (documentación completa)', () => {
   it('documenta esquemas de entidades y parámetros UUID', () => {
     const schemas = Object.keys(document.components?.schemas ?? {});
     for (const schema of [
+      'AgendaEntryEntity',
       'CategoryEntity',
       'ClinicEntity',
       'ClinicInventoryItemEntity',

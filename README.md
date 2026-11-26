@@ -163,7 +163,7 @@ El repositorio partió del proyecto base de NestJS (`nest new`) y ya incluye las
 | Swagger en `/api/docs` | ✅ Configurado y verificado automáticamente (sección [19](#19-swagger-y-endpoints-implementados)) |
 | Archivo `.env.example` | ✅ Creado |
 | Módulos de categorías, productos, movimientos y reportes | ✅ Implementados e integrados en `develop` |
-| Módulo de práctica de clínicas, inventario, pacientes y citas | ✅ Implementado en `feature/clinic-crud` (secciones [20](#20-práctica-guiada-clínicas-con-inventario-independiente) y [21](#21-práctica-guiada-pacientes-citas-y-comentarios)) |
+| Módulo de práctica de clínicas, inventario, pacientes, citas y agenda 3D | ✅ Implementado en `feature/clinic-crud` (secciones [20](#20-práctica-guiada-clínicas-con-inventario-independiente), [21](#21-práctica-guiada-pacientes-citas-y-comentarios) y [22](#22-panel-de-salud-agenda-3d-y-ayuda)) |
 | Pruebas unitarias y de integración | ✅ Implementadas (sección [13](#13-pruebas)) |
 
 Scripts disponibles en `package.json`:
@@ -911,7 +911,7 @@ Se deberán incluir pruebas unitarias y pruebas de integración para las reglas 
 - **Unitarias** (`src/**/*.spec.ts`, se ejecutan con `npm run test`): prueban servicios aislados, simulando (mock) el acceso a la base de datos.
 - **Integración** (`test/*.e2e-spec.ts`, se ejecutan con `npm run test:e2e`): prueban los endpoints por HTTP (controladores, pipes, DTOs y servicios reales). `test/categories-products.e2e-spec.ts` usa un doble en memoria de `PrismaService` que replica `UNIQUE` y `ON DELETE RESTRICT`, así que no depende de PostgreSQL. `test/swagger.e2e-spec.ts` genera el documento OpenAPI y comprueba que cubra todas las rutas. `test/inventory-movements.e2e-spec.ts` se ejecuta solo cuando se define `TEST_DATABASE_URL`; sin esa variable sus 8 pruebas aparecen como omitidas. Para ejecutarlas, use una base separada (`inventory_management_test`) para no borrar sus datos de desarrollo.
 
-Estado verificado: `npm run build`, `npm run test` (38 pruebas) y `npm run test:e2e` (14 pruebas en verde: 7 de integración de categorías/productos, 4 de Swagger, 2 de health y la del `AppController`; 8 pruebas de movimientos quedan omitidas al no definir `TEST_DATABASE_URL`).
+Estado verificado en `feature/clinic-crud`: `npm run build` y `npm run lint` sin errores, `npm run test` (78 pruebas en 14 suites) y `npm run test:e2e` (53 pruebas en 9 suites con `TEST_DATABASE_URL`). Sin `TEST_DATABASE_URL`, las suites que requieren PostgreSQL aparecen omitidas.
 
 Con `TEST_DATABASE_URL` apuntando a una base de prueba separada y ya migrada con `npx prisma migrate deploy`, se ejecuta la suite completa:
 
@@ -919,7 +919,7 @@ Con `TEST_DATABASE_URL` apuntando a una base de prueba separada y ya migrada con
 TEST_DATABASE_URL="postgresql://usuario:password@localhost:5432/inventory_management_test?schema=public" npm run test:e2e
 ```
 
-Resultado verificado: **5 suites, 22 pruebas en verde, 0 omitidas**. Los mensajes `Foreign key constraint violated` que aparecen en la consola son esperados: las pruebas comprueban que `Restrict` impide borrar registros con relaciones.
+Resultado verificado: **9 suites, 53 pruebas en verde, 0 omitidas**. Los mensajes `Foreign key constraint violated` que aparecen en la consola son esperados: las pruebas comprueban que `Restrict` impide borrar registros con relaciones.
 
 ---
 
@@ -1193,13 +1193,14 @@ Códigos acordados: `400` validación de DTO, `404` recurso inexistente, `409` d
 npm run start:dev
 ```
 
-Abre `http://localhost:3101/api/docs` (o el `PORT` que tengas configurado en `.env`). La configuración (título, descripción, versión, servidor y los 7 tags) está centralizada en `src/swagger.config.ts` y la usa `src/main.ts`.
+Abre `http://localhost:3101/api/docs` (o el `PORT` que tengas configurado en `.env`). La configuración (título, descripción, versión, servidor y los 11 tags) está centralizada en `src/swagger.config.ts` y la usa `src/main.ts`.
 
 ### Cobertura de documentación
 
 | Tag | Método | Ruta | Éxito | Errores documentados |
 |---|---|---|---|---|
 | app | GET | `/` | 200 | — |
+| agenda | GET | `/agenda` | 200 | 400 |
 | categories | POST | `/categories` | 201 | 400, 409 |
 | categories | GET | `/categories` | 200 | — |
 | categories | GET | `/categories/{id}` | 200 | 400, 404 |
@@ -1245,10 +1246,11 @@ Abre `http://localhost:3101/api/docs` (o el `PORT` que tengas configurado en `.e
 | inventory | GET | `/inventory/out-of-stock` | 200 | 400 |
 | health | GET | `/health` | 200 | 503 |
 
-**Total: 23 rutas y 45 operaciones**, todas con `@ApiTags`, `@ApiOperation` y al menos una respuesta 2xx documentada.
+**Total: 24 rutas y 46 operaciones**, todas con `@ApiTags`, `@ApiOperation` y al menos una respuesta 2xx documentada.
 
 Parámetros de consulta relevantes:
 
+- `GET /agenda`: `date` (`YYYY-MM-DD`) o `start` y `end` juntos; sin parámetros devuelve el día actual en UTC.
 - `GET /products`: `page`, `limit`, `search`, `categoryId`, `lowStock`.
 - `GET /inventory-movements` y `GET /inventory-movements/product/{productId}`: `page`, `limit`, `type`, `productId`, `startDate`, `endDate`.
 - `GET /inventory/low-stock` y `GET /inventory/out-of-stock`: `page`, `limit`.
@@ -1260,7 +1262,7 @@ Todos los `id` y `productId` de ruta usan `ParseUUIDPipe`, por lo que Swagger lo
 `test/swagger.e2e-spec.ts` genera el documento OpenAPI con la misma configuración que `main.ts` y comprueba que:
 
 1. El título, la versión y la descripción sean los esperados.
-2. Estén los 10 tags y las 23 rutas / 45 operaciones.
+2. Estén los 11 tags y las 24 rutas / 46 operaciones.
 3. Cada operación tenga `summary`, `tags` y una respuesta `2xx`.
 4. Estén los esquemas de entidades y DTOs, y que los parámetros de ruta sean UUID.
 
@@ -1272,7 +1274,7 @@ npm run test
 npm run test:e2e
 ```
 
-Evidencia sugerida para el PR: captura de `/api/docs` mostrando los tags `app`, `categories`, `clinics`, `patients`, `appointments`, `comments`, `products`, `inventory-movements`, `inventory` y `health`, y el resultado de `npm run test:e2e` con todas las suites en verde.
+Evidencia sugerida para el PR: captura de `/api/docs` mostrando los tags `app`, `agenda`, `categories`, `clinics`, `patients`, `appointments`, `comments`, `products`, `inventory-movements`, `inventory` y `health`, y el resultado de `npm run test:e2e` con todas las suites en verde.
 
 ---
 
@@ -1407,3 +1409,43 @@ npm run test:e2e -- --runInBand
 ```
 
 Las pruebas unitarias están en `src/patients/patients.service.spec.ts`, `src/appointments/appointments.service.spec.ts` y `src/appointment-comments/appointment-comments.service.spec.ts`. Las de integración HTTP están en `test/care.e2e-spec.ts` (usa `TEST_DATABASE_URL`).
+
+---
+
+## 22. Panel de salud: agenda 3D y ayuda
+
+`/clinicas.html` se reorganizó como un panel con menú lateral y cinco secciones independientes:
+
+1. **Agenda 3D**: sección principal con un calendario tridimensional, contador de citas por día y las agendas del día con clínica, paciente, motivo, duración y estado.
+2. **Clínicas**: alta, edición, eliminación y accesos directos a los módulos de cada clínica.
+3. **Inventario**: formulario y stock de la clínica elegida en su propio selector.
+4. **Pacientes y citas**: subpestañas separadas para pacientes, citas y comentarios.
+5. **Ayuda y configuración**: guía rápida, códigos HTTP, verificación de salud, Swagger, diagnóstico copiable y preferencias locales.
+
+### Agenda del día
+
+- El calendario usa `GET /agenda?date=YYYY-MM-DD` y muestra todas las clínicas; el filtro desplegante permite ver una sola.
+- Los botones **Anterior**, **Hoy**, **Siguiente** y **Actualizar** cambian el día sin recargar la página; también se puede pulsar cualquier día del calendario.
+- Las tarjetas de la agenda indican el recordatorio configurado y llevan un botón **Atender →** que abre Pacientes y citas de esa clínica.
+- Los contadores muestran total, confirmadas/completadas, pendientes y canceladas.
+- Sin parámetros, `GET /agenda` devuelve el día actual en UTC. También acepta `?start=YYYY-MM-DD&end=YYYY-MM-DD` (rango inclusivo).
+
+### Módulos independientes
+
+Cada sección tiene su propio selector de clínica, por lo que se puede entrar desde el menú sin depender de la tabla de clínicas. Los botones de cada fila son accesos rápidos: **Atención**, **Inventario**, **Agenda**, **Editar** y **Eliminar**. Las acciones de pacientes, citas y comentarios están organizadas con iconos y colores coherentes.
+
+### Ayuda y configuración
+
+- **Verificar conexión** llama a `GET /health`.
+- **Abrir documentación Swagger** abre `/api/docs`.
+- **Copiar diagnóstico** guarda en el portapapeles la URL, la fecha de agenda, el número de clínicas y citas visibles, y la duración configurada.
+- Las preferencias se guardan en `localStorage`: duración por defecto de la cita, minutos de recordatorio, resaltado de fines de semana, diseño compacto y actualización automática de la agenda cada 30 segundos.
+
+### Verificación
+
+```bash
+npm run test -- --runInBand
+npm run test:e2e -- --runInBand
+```
+
+Las pruebas unitarias de la agenda están en `src/agenda/agenda.service.spec.ts` y las HTTP en `test/agenda.e2e-spec.ts` (usa `TEST_DATABASE_URL`).

@@ -7,6 +7,11 @@ export const API_TAGS = [
     description: 'Endpoint raíz / verificación rápida del servicio',
   },
   {
+    name: 'agenda',
+    description:
+      'Agenda del día o de un rango para el calendario de salud; incluye clínica y paciente.',
+  },
+  {
     name: 'categories',
     description: 'CRUD de categorías y consulta de sus productos',
   },

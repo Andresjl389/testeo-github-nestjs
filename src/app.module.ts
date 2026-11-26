@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
+import { AgendaModule } from './agenda/agenda.module';
 import { AppService } from './app.service';
 import { AppointmentCommentsModule } from './appointment-comments/appointment-comments.module';
 import { AppointmentsModule } from './appointments/appointments.module';
@@ -32,6 +33,7 @@ const isTest = process.env.NODE_ENV === 'test';
       validate: isTest ? undefined : validateEnvironment,
     }),
     PrismaModule,
+    AgendaModule,
     CategoriesModule,
     ClinicsModule,
     PatientsModule,

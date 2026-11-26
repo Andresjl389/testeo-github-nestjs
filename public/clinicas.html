@@ -3,63 +3,160 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Práctica CRUD · Clínicas, inventario y citas</title>
+    <title>Panel de salud · Clínicas, agenda e inventario</title>
     <style>
       :root {
         color-scheme: light;
         font-family:
           Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
           "Segoe UI", sans-serif;
-        background: #f4f7fb;
-        color: #16233a;
+        background: #f4f8fb;
+        color: #13243b;
+        --ink: #13243b;
+        --muted: #64778f;
+        --line: #dce6ef;
+        --teal: #0f9b8e;
+        --teal-dark: #0b6f68;
+        --mint: #e6f8f4;
+        --blue: #3b5bdb;
+        --card: rgba(255, 255, 255, 0.94);
+        --shadow: 0 18px 40px rgba(30, 54, 92, 0.09);
       }
       * { box-sizing: border-box; }
       body {
         margin: 0;
         min-height: 100vh;
-        padding: 32px 20px 60px;
+        padding: 24px 20px 60px;
         background:
-          radial-gradient(circle at 12% 8%, #dceeff 0, transparent 32%),
-          radial-gradient(circle at 88% 0, #e7dcff 0, transparent 28%),
-          #f4f7fb;
+          radial-gradient(circle at 8% 4%, #d9f2ee 0, transparent 30%),
+          radial-gradient(circle at 92% 2%, #e4eaff 0, transparent 28%),
+          #f4f8fb;
       }
-      .wrap { max-width: 1080px; margin: 0 auto; }
-      header {
+      body.compact .card { padding: 16px; margin-bottom: 16px; }
+      body.compact th, body.compact td { padding: 8px 10px; }
+      body.compact .calendar-day { min-height: 56px; }
+
+      .app-shell {
+        max-width: 1440px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 238px minmax(0, 1fr);
+        gap: 24px;
+      }
+      .sidebar {
+        position: sticky;
+        top: 24px;
+        align-self: start;
+        border-radius: 22px;
+        padding: 20px;
+        color: #fff;
+        background:
+          radial-gradient(circle at 100% 0, rgba(93, 222, 203, 0.35), transparent 45%),
+          linear-gradient(160deg, #123b53, #0b6f68);
+        box-shadow: 0 20px 44px rgba(11, 111, 104, 0.24);
+      }
+      .brand { display: flex; align-items: center; gap: 12px; }
+      .brand-mark {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        font-size: 24px;
+        background: linear-gradient(145deg, #7ae7d4, #3aa99b);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      }
+      .brand strong { display: block; font-size: 16px; letter-spacing: -0.01em; }
+      .brand small { color: #bfe6e0; font-size: 12px; }
+      .nav { display: grid; gap: 7px; margin-top: 26px; }
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        border: 1px solid transparent;
+        border-radius: 12px;
+        padding: 11px 12px;
+        background: rgba(255, 255, 255, 0.09);
+        color: #dcece9;
+        font: inherit;
+        font-weight: 650;
+        font-size: 14px;
+        text-align: left;
+        cursor: pointer;
+        transition: transform 0.12s, background 0.12s;
+      }
+      .nav-item:hover { transform: translateX(3px); background: rgba(255, 255, 255, 0.16); }
+      .nav-item.active {
+        background: #fff;
+        color: var(--teal-dark);
+        box-shadow: 0 8px 20px rgba(4, 45, 44, 0.18);
+      }
+      .nav-icon { width: 22px; text-align: center; font-size: 17px; }
+      .sidebar-note {
+        margin-top: 24px;
+        border-top: 1px solid rgba(255, 255, 255, 0.16);
+        padding-top: 16px;
+        color: #c3e5df;
+        font-size: 12px;
+        line-height: 1.55;
+      }
+      .sidebar-note code { background: rgba(255, 255, 255, 0.14); color: #fff; }
+
+      .main { min-width: 0; }
+      .topbar {
         display: flex;
         align-items: flex-end;
         justify-content: space-between;
         gap: 16px;
-        margin-bottom: 24px;
+        margin-bottom: 22px;
       }
-      h1 { margin: 0 0 6px; font-size: 30px; letter-spacing: -0.02em; }
-      header p { margin: 0; color: #5b6b85; }
-      a.docs {
-        color: #3b5bdb;
-        text-decoration: none;
-        font-weight: 600;
-        white-space: nowrap;
+      h1 { margin: 0 0 5px; font-size: 30px; letter-spacing: -0.025em; }
+      .topbar p { margin: 0; color: var(--muted); font-size: 14px; }
+      .topbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+      .date-chip {
+        border: 1px solid #cfe8e3;
+        border-radius: 999px;
+        padding: 8px 13px;
+        background: #fff;
+        color: var(--teal-dark);
+        font-size: 12px;
+        font-weight: 700;
       }
+      a.docs { color: var(--blue); text-decoration: none; font-weight: 700; font-size: 13px; white-space: nowrap; }
+
+      .view { display: none; }
+      .view.active { display: block; animation: appear 0.22s ease-out; }
+      @keyframes appear { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
       .card {
-        background: rgba(255, 255, 255, 0.92);
-        border: 1px solid #e1e7f0;
+        background: var(--card);
+        border: 1px solid var(--line);
         border-radius: 18px;
-        box-shadow: 0 18px 40px rgba(30, 54, 92, 0.08);
+        box-shadow: var(--shadow);
         padding: 24px;
-        margin-bottom: 26px;
+        margin-bottom: 22px;
       }
-      form {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 16px 20px;
+      .card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        flex-wrap: wrap;
       }
-      label { display: flex; flex-direction: column; gap: 7px; font-weight: 600; font-size: 14px; }
-      label.full { grid-column: 1 / -1; }
-      h3 { margin: 26px 0 12px; font-size: 17px; }
+      .card-head h2 { margin: 0; font-size: 21px; }
+      .card-head h3 { margin: 0; font-size: 17px; }
+      .subtitle { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
+      .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+      .help-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+
+      form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 20px; }
+      label { display: flex; flex-direction: column; gap: 7px; font-weight: 650; font-size: 14px; }
+      label.full, label.check, .actions { grid-column: 1 / -1; }
       input, textarea, select {
         width: 100%;
         border: 1px solid #ccd6e5;
         border-radius: 10px;
-        padding: 11px 13px;
+        padding: 10px 12px;
         font: inherit;
         color: inherit;
         background: #fff;
@@ -67,362 +164,750 @@
         transition: border-color 0.15s, box-shadow 0.15s;
       }
       input:focus, textarea:focus, select:focus {
-        border-color: #4c6ef5;
-        box-shadow: 0 0 0 3px rgba(76, 110, 245, 0.15);
+        border-color: var(--teal);
+        box-shadow: 0 0 0 3px rgba(15, 155, 142, 0.15);
       }
-      textarea { resize: vertical; min-height: 76px; }
-      .check {
-        flex-direction: row;
-        align-items: center;
-        gap: 10px;
-        align-self: end;
-        padding-bottom: 10px;
-      }
+      textarea { resize: vertical; min-height: 70px; }
+      .check { flex-direction: row; align-items: center; gap: 10px; padding-bottom: 6px; }
       .check input { width: 18px; height: 18px; }
-      .actions {
-        grid-column: 1 / -1;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        align-items: center;
-      }
+      .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+      .actions span { color: var(--muted); font-size: 12px; }
+
       button {
         border: 0;
         border-radius: 10px;
-        padding: 10px 16px;
+        padding: 10px 15px;
         font: inherit;
-        font-weight: 650;
+        font-weight: 700;
         cursor: pointer;
-        transition: transform 0.12s, filter 0.12s;
+        transition: transform 0.12s, filter 0.12s, box-shadow 0.12s;
       }
       button:hover { filter: brightness(1.04); }
       button:active { transform: translateY(1px); }
-      .primary { background: #3b5bdb; color: #fff; }
-      .secondary { background: #e9eef7; color: #2d3e5d; }
-      .danger { background: #ffe3e3; color: #c92a2a; padding: 7px 12px; }
-      .small { background: #e7f5ff; color: #1864ab; padding: 7px 12px; }
+      .btn-primary { background: linear-gradient(135deg, #12a597, #0b6f68); color: #fff; box-shadow: 0 8px 18px rgba(11, 111, 104, 0.22); }
+      .btn-blue { background: var(--blue); color: #fff; }
+      .btn-soft { background: var(--mint); color: var(--teal-dark); }
+      .btn-ghost { background: #eef2f7; color: #34455f; }
+      .btn-danger { background: #fff0f0; color: #c92a2a; }
+      .btn-small { padding: 7px 11px; font-size: 12px; border-radius: 9px; }
+      .action-bar { display: flex; flex-wrap: wrap; gap: 8px; }
+      .icon-btn {
+        display: inline-grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        padding: 0;
+        border-radius: 10px;
+        background: #eef2f7;
+        color: #34455f;
+        font-size: 15px;
+      }
+
       .message {
-        margin: 18px 0 0;
+        margin: 16px 0 0;
         border-radius: 10px;
         padding: 11px 14px;
-        font-size: 14px;
+        font-size: 13px;
       }
       .message[data-kind="error"] { background: #fff0f0; color: #c92a2a; }
       .message[data-kind="success"] { background: #ebfbee; color: #2b8a3e; }
       .message[data-kind="info"] { background: #e7f5ff; color: #1864ab; }
-      .list-head {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 14px;
-      }
-      .list-head h2 { margin: 0; font-size: 20px; }
-      .subtitle { margin: 4px 0 0; color: #5b6b85; font-size: 13px; }
+
       table { width: 100%; border-collapse: collapse; font-size: 14px; }
       th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #edf1f7; vertical-align: middle; }
-      th { color: #5b6b85; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+      th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
       tr:last-child td { border-bottom: 0; }
-      tr.selected { background: #f5f8ff; }
-      .pill {
-        display: inline-block;
-        border-radius: 999px;
-        padding: 3px 10px;
-        font-size: 12px;
-        font-weight: 700;
-      }
+      tr.selected { background: #f2fbf9; }
+      .pill { display: inline-block; border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 800; letter-spacing: 0.02em; }
       .pill.on { background: #ebfbee; color: #2b8a3e; }
       .pill.off { background: #f1f3f5; color: #868e96; }
       .pill.warn { background: #fff3bf; color: #e67700; }
-      .row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+      .row-actions { display: flex; gap: 7px; flex-wrap: wrap; }
       code { background: #f1f3f5; border-radius: 5px; padding: 2px 5px; font-size: 12px; }
-      #inventory-panel { border-color: #c9d7ff; }
-      @media (max-width: 720px) {
-        header { flex-direction: column; align-items: flex-start; }
-        form { grid-template-columns: 1fr; }
-        .list-head { flex-direction: column; align-items: flex-start; }
+      .table-wrap { overflow-x: auto; }
+      .empty-state {
+        border: 1px dashed #b9d9d4;
+        border-radius: 14px;
+        background: #f4fbfa;
+        padding: 24px;
+        color: var(--muted);
+        text-align: center;
+        font-size: 14px;
+      }
+      .empty-state strong { display: block; color: var(--teal-dark); margin-bottom: 5px; }
+
+      /* Agenda 3D */
+      .agenda-controls {
+        display: flex;
+        align-items: end;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+      }
+      .agenda-controls label { min-width: 170px; font-size: 12px; color: var(--muted); }
+      .agenda-controls .control-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+      .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 22px; }
+      .stat {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: #fff;
+        padding: 15px 17px;
+        box-shadow: 0 8px 20px rgba(30, 54, 92, 0.05);
+      }
+      .stat span { color: var(--muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+      .stat strong { display: block; margin-top: 5px; font-size: 27px; letter-spacing: -0.03em; }
+      .stat.teal { background: linear-gradient(145deg, #0f9b8e, #0b6f68); border-color: transparent; color: #fff; }
+      .stat.teal span { color: #c7efea; }
+      .stat.ok strong { color: #2b8a3e; }
+      .stat.warn strong { color: #e67700; }
+      .stat.off strong { color: #868e96; }
+
+      .calendar-stage { perspective: 1400px; padding: 6px 0 30px; overflow: hidden; }
+      .calendar-shell {
+        position: relative;
+        max-width: 760px;
+        margin: 0 auto;
+        border: 1px solid #cfe9e4;
+        border-radius: 24px;
+        padding: 22px;
+        background: linear-gradient(160deg, #ffffff 0%, #eefbf8 100%);
+        box-shadow:
+          0 28px 48px rgba(15, 155, 142, 0.17),
+          0 9px 0 #b7ddd7;
+        transform: rotateX(9deg) rotateZ(-0.6deg);
+        transform-style: preserve-3d;
+        transition: transform 0.25s ease;
+      }
+      .calendar-shell:hover { transform: rotateX(4deg) rotateZ(0) translateY(-5px); }
+      .calendar-shell::after {
+        content: "";
+        position: absolute;
+        inset: auto 18px -20px;
+        height: 24px;
+        border-radius: 50%;
+        background: rgba(15, 155, 142, 0.18);
+        filter: blur(14px);
+        transform: translateZ(-30px);
+      }
+      .calendar-head { display: flex; align-items: center; gap: 13px; margin-bottom: 18px; }
+      .medical-mark {
+        width: 46px;
+        height: 46px;
+        border-radius: 15px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(145deg, #7ae7d4, #3aa99b);
+        color: #fff;
+        font-size: 26px;
+        font-weight: 800;
+        box-shadow: 0 8px 18px rgba(15, 155, 142, 0.25);
+      }
+      .calendar-head p { margin: 0; color: var(--teal-dark); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.09em; }
+      .calendar-head h3 { margin: 3px 0 0; font-size: 23px; text-transform: capitalize; }
+      .calendar-badge { margin-left: auto; border-radius: 999px; background: #fff; border: 1px solid #d3ebe6; padding: 7px 12px; color: var(--teal-dark); font-size: 12px; font-weight: 800; }
+      .weekdays, .day-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+      .weekdays { margin-bottom: 8px; }
+      .weekday { text-align: center; color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; }
+      .calendar-day {
+        min-height: 74px;
+        border: 1px solid #dceeea;
+        border-radius: 14px;
+        background: #fff;
+        padding: 8px;
+        text-align: left;
+        color: var(--ink);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transform: translateZ(12px);
+        box-shadow: 0 6px 13px rgba(30, 54, 92, 0.09);
+      }
+      .calendar-day:hover { transform: translateZ(22px) translateY(-3px); }
+      .calendar-day.selected {
+        background: linear-gradient(145deg, #12a597, #0b6f68);
+        border-color: #0b6f68;
+        color: #fff;
+        box-shadow: 0 10px 22px rgba(11, 111, 104, 0.32);
+      }
+      .calendar-day.other { opacity: 0.4; }
+      .calendar-day.weekend { background: #f6fbff; }
+      .calendar-day.selected.weekend { background: linear-gradient(145deg, #12a597, #0b6f68); opacity: 1; }
+      .day-number { font-weight: 850; font-size: 15px; }
+      .day-count { font-size: 10px; font-weight: 700; color: var(--teal-dark); }
+      .calendar-day.selected .day-count { color: #d7f6f1; }
+      .day-dot { width: 7px; height: 7px; border-radius: 50%; background: #ff922b; display: inline-block; margin-right: 4px; }
+      .calendar-day.selected .day-dot { background: #ffe066; }
+
+      .agenda-card {
+        --status-color: #e67700;
+        display: grid;
+        grid-template-columns: 76px minmax(0, 1fr) auto;
+        gap: 15px;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-left: 5px solid var(--status-color);
+        border-radius: 16px;
+        background: #fff;
+        padding: 14px 16px;
+        box-shadow: 0 8px 18px rgba(30, 54, 92, 0.05);
+      }
+      .agenda-card.status-CONFIRMED, .agenda-card.status-COMPLETED { --status-color: #2b8a3e; }
+      .agenda-card.status-CANCELLED { --status-color: #adb5bd; }
+      .agenda-time strong { display: block; font-size: 19px; }
+      .agenda-time span { color: var(--muted); font-size: 11px; font-weight: 700; }
+      .agenda-card h4 { margin: 3px 0 4px; font-size: 16px; }
+      .agenda-card p { margin: 0; color: var(--muted); font-size: 12px; }
+      .agenda-clinic { color: var(--teal-dark) !important; font-weight: 700; }
+      .agenda-side { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+      .timeline { display: grid; gap: 12px; }
+
+      /* Subpestañas de atención */
+      .subtabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0 20px; }
+      .subtab { background: #eef2f7; color: #475569; padding: 9px 14px; border-radius: 999px; font-size: 13px; }
+      .subtab.active { background: var(--teal-dark); color: #fff; box-shadow: 0 6px 14px rgba(11, 111, 104, 0.2); }
+      .section-divider { margin: 26px 0 12px; font-size: 16px; }
+
+      /* Ayuda y configuración */
+      .help-list { margin: 12px 0 0; padding-left: 20px; color: #46586f; line-height: 1.7; font-size: 14px; }
+      .code-list { display: grid; gap: 9px; margin-top: 12px; }
+      .code-row { display: flex; align-items: center; gap: 11px; font-size: 13px; color: #46586f; }
+      .code-badge { border-radius: 8px; padding: 4px 9px; font-weight: 800; font-size: 12px; background: #e7f5ff; color: #1864ab; }
+      .code-badge.bad { background: #fff0f0; color: #c92a2a; }
+      .tool-list { display: grid; gap: 9px; margin-top: 12px; }
+      .tool-list .btn { text-align: left; }
+      .settings-form { margin-top: 10px; }
+      .settings-note { color: var(--muted); font-size: 12px; margin: 12px 0 0; }
+
+      @media (max-width: 1120px) {
+        .app-shell { grid-template-columns: 1fr; }
+        .sidebar { position: static; }
+        .nav { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+        .sidebar-note { display: none; }
+      }
+      @media (max-width: 760px) {
+        body { padding: 16px 12px 40px; }
+        .topbar { flex-direction: column; align-items: flex-start; }
+        form, .grid-2, .help-grid, .stats { grid-template-columns: 1fr; }
+        .agenda-card { grid-template-columns: 1fr; }
+        .agenda-side { align-items: flex-start; }
+        .weekdays, .day-grid { gap: 4px; }
+        .calendar-day { min-height: 54px; padding: 5px; }
+        .day-number { font-size: 12px; }
+        .day-count { font-size: 9px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation: none !important; transition: none !important; }
+        .calendar-shell { transform: none; }
       }
     </style>
   </head>
   <body>
-    <main class="wrap">
-      <header>
-        <div>
-          <h1>Práctica CRUD · Clínicas, inventario y citas</h1>
-          <p>Cada clínica tiene sus propios insumos, pacientes, citas y comentarios.</p>
-        </div>
-        <a class="docs" href="/api/docs">Ver Swagger →</a>
-      </header>
-
-      <section class="card" id="clinic-form-card">
-        <form id="clinic-form" novalidate>
-          <label>
-            Nombre *
-            <input id="name" name="name" required maxlength="120" placeholder="Clínica Central" />
-          </label>
-          <label>
-            Teléfono *
-            <input id="phone" name="phone" required maxlength="30" placeholder="+57 300 1234567" />
-          </label>
-          <label class="full">
-            Dirección *
-            <textarea id="address" name="address" required maxlength="200" placeholder="Calle 10 # 20-30"></textarea>
-          </label>
-          <label>
-            Correo
-            <input id="email" name="email" type="email" maxlength="120" placeholder="contacto@clinica.com" />
-          </label>
-          <label>
-            Especialidad
-            <input id="specialty" name="specialty" maxlength="120" placeholder="Medicina general" />
-          </label>
-          <label class="check">
-            <input id="active" name="active" type="checkbox" checked />
-            Clínica activa
-          </label>
-          <div class="actions">
-            <button class="primary" id="submit" type="submit">Crear clínica</button>
-            <button class="secondary" id="cancel-edit" type="button" hidden>Cancelar edición</button>
-            <span>Prueba un nombre repetido para ver un <code>409</code>.</span>
-          </div>
-        </form>
-        <p class="message" id="message" data-kind="info" hidden></p>
-      </section>
-
-      <section class="card list" id="clinic-list-card">
-        <div class="list-head">
-          <h2>Clínicas registradas</h2>
-          <button class="small" id="refresh" type="button">Recargar</button>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Teléfono</th>
-              <th>Dirección</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="clinics-body">
-            <tr><td colspan="5">Cargando…</td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section class="card list" id="inventory-panel" hidden>
-        <div class="list-head">
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">✚</div>
           <div>
-            <h2 id="inventory-title">Inventario de la clínica</h2>
-            <p class="subtitle" id="inventory-subtitle"></p>
+            <strong>Salud · Panel CRUD</strong>
+            <small>Clínicas independientes</small>
           </div>
-          <button class="secondary" id="back-to-clinics" type="button">← Volver a clínicas</button>
         </div>
+        <nav class="nav" aria-label="Secciones del panel">
+          <button class="nav-item active" type="button" data-view="agenda">
+            <span class="nav-icon">📅</span> Agenda 3D
+          </button>
+          <button class="nav-item" type="button" data-view="clinics">
+            <span class="nav-icon">🏥</span> Clínicas
+          </button>
+          <button class="nav-item" type="button" data-view="inventory">
+            <span class="nav-icon">📦</span> Inventario
+          </button>
+          <button class="nav-item" type="button" data-view="care">
+            <span class="nav-icon">🩺</span> Pacientes y citas
+          </button>
+          <button class="nav-item" type="button" data-view="help">
+            <span class="nav-icon">⚙️</span> Ayuda y configuración
+          </button>
+        </nav>
+        <div class="sidebar-note">
+          Cada módulo trabaja con su propia clínica. Cambia de sección sin perder el contexto.
+          <br /><br />
+          API local: <code>/api/docs</code>
+        </div>
+      </aside>
 
-        <form id="item-form" novalidate>
-          <label>
-            Nombre del insumo *
-            <input id="item-name" required maxlength="120" placeholder="Jeringas 10 ml" />
-          </label>
-          <label>
-            SKU
-            <input id="item-sku" maxlength="60" placeholder="JER-10" />
-          </label>
-          <label>
-            Cantidad
-            <input id="item-quantity" type="number" min="0" value="0" />
-          </label>
-          <label>
-            Stock mínimo
-            <input id="item-min-stock" type="number" min="0" value="0" />
-          </label>
-          <label>
-            Unidad
-            <input id="item-unit" maxlength="20" placeholder="unidades" />
-          </label>
-          <label>
-            Descripción
-            <input id="item-description" maxlength="255" placeholder="Uso en consulta externa" />
-          </label>
-          <div class="actions">
-            <button class="primary" id="item-submit" type="submit">Agregar insumo</button>
-            <button class="secondary" id="cancel-item-edit" type="button" hidden>Cancelar edición</button>
-            <span>El mismo nombre se permite en otra clínica.</span>
-          </div>
-        </form>
-        <p class="message" id="item-message" data-kind="info" hidden></p>
-
-        <table>
-          <thead>
-            <tr>
-              <th>Insumo</th>
-              <th>SKU</th>
-              <th>Cantidad</th>
-              <th>Mínimo</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="items-body">
-            <tr><td colspan="6">Selecciona una clínica para ver su inventario.</td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section class="card list" id="care-panel" hidden>
-        <div class="list-head">
+      <main class="main">
+        <header class="topbar">
           <div>
-            <h2 id="care-title">Pacientes y citas</h2>
-            <p class="subtitle" id="care-subtitle"></p>
+            <h1>Panel de atención clínica</h1>
+            <p>Agenda del día, inventario, pacientes y comentarios en un solo lugar.</p>
           </div>
-          <button class="secondary" id="back-to-clinics-care" type="button">← Volver a clínicas</button>
-        </div>
-
-        <h3>Pacientes</h3>
-        <form id="patient-form" novalidate>
-          <label>
-            Nombre *
-            <input id="patient-name" required maxlength="120" placeholder="Ana Torres" />
-          </label>
-          <label>
-            Documento
-            <input id="patient-document" maxlength="30" placeholder="CC 1234567890" />
-          </label>
-          <label>
-            Teléfono *
-            <input id="patient-phone" required maxlength="30" placeholder="+57 300 1234567" />
-          </label>
-          <label>
-            Correo
-            <input id="patient-email" type="email" maxlength="120" placeholder="ana@example.com" />
-          </label>
-          <label>
-            Fecha de nacimiento
-            <input id="patient-birth" type="date" />
-          </label>
-          <label>
-            Notas
-            <input id="patient-notes" maxlength="500" placeholder="Alergia a penicilina" />
-          </label>
-          <label class="check">
-            <input id="patient-active" type="checkbox" checked />
-            Paciente activo
-          </label>
-          <div class="actions">
-            <button class="primary" id="patient-submit" type="submit">Registrar paciente</button>
-            <button class="secondary" id="cancel-patient-edit" type="button" hidden>Cancelar edición</button>
-            <span>Repite el documento para provocar un <code>409</code>.</span>
+          <div class="topbar-actions">
+            <span class="date-chip" id="top-date"></span>
+            <a class="docs" href="/api/docs">Ver Swagger →</a>
           </div>
-        </form>
-        <p class="message" id="patient-message" data-kind="info" hidden></p>
-        <table>
-          <thead>
-            <tr><th>Paciente</th><th>Documento</th><th>Teléfono</th><th>Estado</th><th>Acciones</th></tr>
-          </thead>
-          <tbody id="patients-body">
-            <tr><td colspan="5">Selecciona una clínica para ver sus pacientes.</td></tr>
-          </tbody>
-        </table>
+        </header>
 
-        <h3>Citas</h3>
-        <form id="appointment-form" novalidate>
-          <label>
-            Paciente *
-            <select id="appointment-patient" required></select>
-          </label>
-          <label>
-            Motivo *
-            <input id="appointment-reason" required maxlength="255" placeholder="Control general" />
-          </label>
-          <label>
-            Fecha *
-            <input id="appointment-date" type="date" required />
-          </label>
-          <label>
-            Hora *
-            <input id="appointment-time" type="time" required />
-          </label>
-          <label>
-            Duración (min)
-            <input id="appointment-duration" type="number" min="5" max="480" value="30" />
-          </label>
-          <label>
-            Estado
-            <select id="appointment-status">
-              <option value="PENDING">Pendiente</option>
-              <option value="CONFIRMED">Confirmada</option>
-              <option value="COMPLETED">Completada</option>
-              <option value="CANCELLED">Cancelada</option>
-            </select>
-          </label>
-          <label class="full">
-            Notas
-            <textarea id="appointment-notes" maxlength="1000" placeholder="Llegar 10 minutos antes"></textarea>
-          </label>
-          <div class="actions">
-            <button class="primary" id="appointment-submit" type="submit">Programar cita</button>
-            <button class="secondary" id="cancel-appointment-edit" type="button" hidden>Cancelar edición</button>
-            <span>La fecha debe ser futura y no debe cruzarse con otra cita.</span>
-          </div>
-        </form>
-        <p class="message" id="appointment-message" data-kind="info" hidden></p>
-        <table>
-          <thead>
-            <tr><th>Fecha y hora</th><th>Paciente</th><th>Motivo</th><th>Duración</th><th>Estado</th><th>Acciones</th></tr>
-          </thead>
-          <tbody id="appointments-body">
-            <tr><td colspan="6">Aún no hay citas en esta clínica.</td></tr>
-          </tbody>
-        </table>
-
-        <div id="comments-panel" hidden>
-          <h3 id="comments-title">Historial de comentarios</h3>
-          <form id="comment-form" novalidate>
-            <label>
-              Autor *
-              <input id="comment-author" required maxlength="80" placeholder="Recepcion" />
-            </label>
-            <label>
-              Comentario *
-              <textarea id="comment-body" required maxlength="1000" placeholder="Confirmó la asistencia por teléfono"></textarea>
-            </label>
-            <div class="actions">
-              <button class="primary" id="comment-submit" type="submit">Agregar comentario</button>
+        <!-- ===================== AGENDA 3D ===================== -->
+        <section class="view active" id="agenda-panel" data-view-panel="agenda">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h2>Calendario de salud</h2>
+                <p class="subtitle">Las agendas del día, por clínica y paciente.</p>
+              </div>
+              <span class="pill on">Vista 3D</span>
             </div>
-          </form>
-          <p class="message" id="comment-message" data-kind="info" hidden></p>
-          <table>
-            <thead>
-              <tr><th>Fecha</th><th>Autor</th><th>Comentario</th><th>Acciones</th></tr>
-            </thead>
-            <tbody id="comments-body">
-              <tr><td colspan="4">Sin comentarios todavía.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </main>
+
+            <div class="agenda-controls" style="margin-top: 18px">
+              <label>
+                Día
+                <input id="agenda-date" type="date" />
+              </label>
+              <label>
+                Clínica
+                <select id="agenda-clinic-filter">
+                  <option value="">Todas las clínicas</option>
+                </select>
+              </label>
+              <div class="control-buttons">
+                <button class="btn btn-ghost btn-small" id="agenda-prev" type="button">← Anterior</button>
+                <button class="btn btn-soft btn-small" id="agenda-today" type="button">Hoy</button>
+                <button class="btn btn-ghost btn-small" id="agenda-next" type="button">Siguiente →</button>
+                <button class="btn btn-blue btn-small" id="agenda-refresh" type="button">↻ Actualizar</button>
+              </div>
+            </div>
+            <p class="message" id="agenda-message" data-kind="info" hidden></p>
+
+            <div class="stats">
+              <div class="stat teal"><span>Total citas</span><strong id="agenda-total">0</strong></div>
+              <div class="stat ok"><span>Confirmadas</span><strong id="agenda-confirmed">0</strong></div>
+              <div class="stat warn"><span>Pendientes</span><strong id="agenda-pending">0</strong></div>
+              <div class="stat off"><span>Canceladas</span><strong id="agenda-cancelled">0</strong></div>
+            </div>
+
+            <div class="calendar-stage" aria-label="Calendario tridimensional">
+              <div class="calendar-shell">
+                <div class="calendar-head">
+                  <div class="medical-mark">✚</div>
+                  <div>
+                    <p>Calendario clínico</p>
+                    <h3 id="calendar-month">Cargando…</h3>
+                  </div>
+                  <span class="calendar-badge" id="calendar-badge">UTC</span>
+                </div>
+                <div class="weekdays">
+                  <span class="weekday">Lun</span><span class="weekday">Mar</span>
+                  <span class="weekday">Mié</span><span class="weekday">Jue</span>
+                  <span class="weekday">Vie</span><span class="weekday">Sáb</span>
+                  <span class="weekday">Dom</span>
+                </div>
+                <div class="day-grid" id="calendar-grid"></div>
+              </div>
+            </div>
+
+            <div class="card-head" style="margin-top: 8px">
+              <div>
+                <h3>Agenda del día</h3>
+                <p class="subtitle" id="agenda-date-label"></p>
+              </div>
+            </div>
+            <div class="timeline" id="agenda-timeline" style="margin-top: 16px"></div>
+          </div>
+        </section>
+
+        <!-- ===================== CLÍNICAS ===================== -->
+        <section class="view" id="clinics-panel" data-view-panel="clinics">
+          <section class="card" id="clinic-form-card">
+            <div class="card-head">
+              <div>
+                <h2>Datos de la clínica</h2>
+                <p class="subtitle">Repite el nombre para provocar un <code>409</code>.</p>
+              </div>
+            </div>
+            <form id="clinic-form" novalidate style="margin-top: 18px">
+              <label>
+                Nombre *
+                <input id="name" name="name" required maxlength="120" placeholder="Clínica Central" />
+              </label>
+              <label>
+                Teléfono *
+                <input id="phone" name="phone" required maxlength="30" placeholder="+57 300 1234567" />
+              </label>
+              <label class="full">
+                Dirección *
+                <textarea id="address" name="address" required maxlength="200" placeholder="Calle 10 # 20-30"></textarea>
+              </label>
+              <label>
+                Correo
+                <input id="email" name="email" type="email" maxlength="120" placeholder="contacto@clinica.com" />
+              </label>
+              <label>
+                Especialidad
+                <input id="specialty" name="specialty" maxlength="120" placeholder="Medicina general" />
+              </label>
+              <label class="check">
+                <input id="active" name="active" type="checkbox" checked />
+                Clínica activa
+              </label>
+              <div class="actions">
+                <button class="btn btn-primary" id="submit" type="submit">Crear clínica</button>
+                <button class="btn btn-ghost" id="cancel-edit" type="button" hidden>Cancelar edición</button>
+              </div>
+            </form>
+            <p class="message" id="message" data-kind="info" hidden></p>
+          </section>
+
+          <section class="card list" id="clinic-list-card">
+            <div class="card-head">
+              <div>
+                <h2>Clínicas registradas</h2>
+                <p class="subtitle">Cada fila abre sus propios módulos.</p>
+              </div>
+              <button class="btn btn-soft btn-small" id="refresh" type="button">↻ Recargar</button>
+            </div>
+            <div class="table-wrap" style="margin-top: 14px">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nombre</th><th>Teléfono</th><th>Dirección</th><th>Estado</th><th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="clinics-body">
+                  <tr><td colspan="5">Cargando…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <!-- ===================== INVENTARIO ===================== -->
+        <section class="view" id="inventory-panel" data-view-panel="inventory">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h2 id="inventory-title">Inventario de la clínica</h2>
+                <p class="subtitle" id="inventory-subtitle">Selecciona una clínica para trabajar su stock.</p>
+              </div>
+              <div class="action-bar">
+                <select id="inventory-clinic-select" style="width: auto; min-width: 210px" aria-label="Clínica del inventario">
+                  <option value="">Selecciona una clínica…</option>
+                </select>
+                <button class="btn btn-ghost btn-small" id="back-to-clinics" type="button">← Clínicas</button>
+              </div>
+            </div>
+
+            <h3 class="section-divider">Nuevo insumo</h3>
+            <form id="item-form" novalidate>
+              <label>
+                Nombre del insumo *
+                <input id="item-name" required maxlength="120" placeholder="Jeringas 10 ml" />
+              </label>
+              <label>
+                SKU
+                <input id="item-sku" maxlength="60" placeholder="JER-10" />
+              </label>
+              <label>
+                Cantidad
+                <input id="item-quantity" type="number" min="0" value="0" />
+              </label>
+              <label>
+                Stock mínimo
+                <input id="item-min-stock" type="number" min="0" value="0" />
+              </label>
+              <label>
+                Unidad
+                <input id="item-unit" maxlength="20" placeholder="unidades" />
+              </label>
+              <label>
+                Descripción
+                <input id="item-description" maxlength="255" placeholder="Uso en consulta externa" />
+              </label>
+              <div class="actions">
+                <button class="btn btn-primary" id="item-submit" type="submit">Agregar insumo</button>
+                <button class="btn btn-ghost" id="cancel-item-edit" type="button" hidden>Cancelar edición</button>
+                <span>El mismo nombre se permite en otra clínica.</span>
+              </div>
+            </form>
+            <p class="message" id="item-message" data-kind="info" hidden></p>
+
+            <h3 class="section-divider">Insumos registrados</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Insumo</th><th>SKU</th><th>Cantidad</th><th>Mínimo</th><th>Estado</th><th>Acciones</th></tr>
+                </thead>
+                <tbody id="items-body">
+                  <tr><td colspan="6">Selecciona una clínica para ver su inventario.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== ATENCIÓN ===================== -->
+        <section class="view" id="care-panel" data-view-panel="care">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h2 id="care-title">Pacientes y citas</h2>
+                <p class="subtitle" id="care-subtitle">Selecciona una clínica para usar su agenda.</p>
+              </div>
+              <div class="action-bar">
+                <select id="care-clinic-select" style="width: auto; min-width: 210px" aria-label="Clínica de atención">
+                  <option value="">Selecciona una clínica…</option>
+                </select>
+                <button class="btn btn-ghost btn-small" id="back-to-clinics-care" type="button">← Clínicas</button>
+              </div>
+            </div>
+
+            <div class="subtabs" aria-label="Módulos de atención">
+              <button class="subtab active" type="button" data-care-tab="patients">👥 Pacientes</button>
+              <button class="subtab" type="button" data-care-tab="appointments">📅 Citas</button>
+              <button class="subtab" type="button" data-care-tab="comments">💬 Comentarios</button>
+            </div>
+
+            <div id="care-patients">
+              <h3 class="section-divider">Registro de pacientes</h3>
+              <form id="patient-form" novalidate>
+                <label>
+                  Nombre *
+                  <input id="patient-name" required maxlength="120" placeholder="Ana Torres" />
+                </label>
+                <label>
+                  Documento
+                  <input id="patient-document" maxlength="30" placeholder="CC 1234567890" />
+                </label>
+                <label>
+                  Teléfono *
+                  <input id="patient-phone" required maxlength="30" placeholder="+57 300 1234567" />
+                </label>
+                <label>
+                  Correo
+                  <input id="patient-email" type="email" maxlength="120" placeholder="ana@example.com" />
+                </label>
+                <label>
+                  Fecha de nacimiento
+                  <input id="patient-birth" type="date" />
+                </label>
+                <label>
+                  Notas
+                  <input id="patient-notes" maxlength="500" placeholder="Alergia a penicilina" />
+                </label>
+                <label class="check">
+                  <input id="patient-active" type="checkbox" checked />
+                  Paciente activo
+                </label>
+                <div class="actions">
+                  <button class="btn btn-primary" id="patient-submit" type="submit">Registrar paciente</button>
+                  <button class="btn btn-ghost" id="cancel-patient-edit" type="button" hidden>Cancelar edición</button>
+                </div>
+              </form>
+              <p class="message" id="patient-message" data-kind="info" hidden></p>
+              <h3 class="section-divider">Pacientes de la clínica</h3>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr><th>Paciente</th><th>Documento</th><th>Teléfono</th><th>Estado</th><th>Acciones</th></tr>
+                  </thead>
+                  <tbody id="patients-body">
+                    <tr><td colspan="5">Selecciona una clínica para ver sus pacientes.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div id="care-appointments" hidden>
+              <h3 class="section-divider">Programar cita</h3>
+              <form id="appointment-form" novalidate>
+                <label>
+                  Paciente *
+                  <select id="appointment-patient" required></select>
+                </label>
+                <label>
+                  Motivo *
+                  <input id="appointment-reason" required maxlength="255" placeholder="Control general" />
+                </label>
+                <label>
+                  Fecha *
+                  <input id="appointment-date" type="date" required />
+                </label>
+                <label>
+                  Hora *
+                  <input id="appointment-time" type="time" required />
+                </label>
+                <label>
+                  Duración (min)
+                  <input id="appointment-duration" type="number" min="5" max="480" value="30" />
+                </label>
+                <label>
+                  Estado
+                  <select id="appointment-status">
+                    <option value="PENDING">Pendiente</option>
+                    <option value="CONFIRMED">Confirmada</option>
+                    <option value="COMPLETED">Completada</option>
+                    <option value="CANCELLED">Cancelada</option>
+                  </select>
+                </label>
+                <label class="full">
+                  Notas
+                  <textarea id="appointment-notes" maxlength="1000" placeholder="Llegar 10 minutos antes"></textarea>
+                </label>
+                <div class="actions">
+                  <button class="btn btn-primary" id="appointment-submit" type="submit">Programar cita</button>
+                  <button class="btn btn-ghost" id="cancel-appointment-edit" type="button" hidden>Cancelar edición</button>
+                  <span>La fecha debe ser futura y no debe cruzarse con otra cita.</span>
+                </div>
+              </form>
+              <p class="message" id="appointment-message" data-kind="info" hidden></p>
+              <h3 class="section-divider">Citas de la clínica</h3>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr><th>Fecha y hora</th><th>Paciente</th><th>Motivo</th><th>Duración</th><th>Estado</th><th>Acciones</th></tr>
+                  </thead>
+                  <tbody id="appointments-body">
+                    <tr><td colspan="6">Aún no hay citas en esta clínica.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div id="comments-panel" hidden>
+              <div id="comments-empty" class="empty-state">
+                <strong>Sin cita seleccionada</strong>
+                Abre la pestaña Citas y pulsa <b>💬 Comentarios</b> en una cita para ver su historial.
+              </div>
+              <div id="comments-content" hidden>
+                <h3 class="section-divider" id="comments-title">Historial de comentarios</h3>
+                <form id="comment-form" novalidate>
+                  <label>
+                    Autor *
+                    <input id="comment-author" required maxlength="80" placeholder="Recepcion" />
+                  </label>
+                  <label>
+                    Comentario *
+                    <textarea id="comment-body" required maxlength="1000" placeholder="Confirmó la asistencia por teléfono"></textarea>
+                  </label>
+                  <div class="actions">
+                    <button class="btn btn-primary" id="comment-submit" type="submit">Agregar comentario</button>
+                  </div>
+                </form>
+                <p class="message" id="comment-message" data-kind="info" hidden></p>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr><th>Fecha</th><th>Autor</th><th>Comentario</th><th>Acciones</th></tr>
+                    </thead>
+                    <tbody id="comments-body">
+                      <tr><td colspan="4">Sin comentarios todavía.</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== AYUDA / CONFIGURACIÓN ===================== -->
+        <section class="view" id="help-panel" data-view-panel="help">
+          <div class="help-grid">
+            <div class="card">
+              <div class="card-head"><h2>Centro de ayuda</h2><span class="pill on">Guía rápida</span></div>
+              <ol class="help-list">
+                <li>Crea una clínica en <b>Clínicas</b>.</li>
+                <li>Desde su fila abre <b>Inventario</b> o <b>Pacientes y citas</b>.</li>
+                <li>Registra pacientes y programa citas futuras sin solapes.</li>
+                <li>Pulsa <b>Comentarios</b> en una cita para acumular notas con autor y fecha.</li>
+                <li>Usa <b>Agenda 3D</b> para ver las citas del día por clínica.</li>
+              </ol>
+              <p class="settings-note">Todos los datos se guardan en PostgreSQL; las preferencias de esta página se guardan sólo en tu navegador.</p>
+            </div>
+
+            <div class="card">
+              <div class="card-head"><h2>Códigos HTTP para practicar</h2></div>
+              <div class="code-list">
+                <div class="code-row"><span class="code-badge">201</span> Creación correcta.</div>
+                <div class="code-row"><span class="code-badge">200</span> Consulta o actualización correcta.</div>
+                <div class="code-row"><span class="code-badge">204</span> Eliminación correcta.</div>
+                <div class="code-row"><span class="code-badge bad">400</span> Datos inválidos, fecha pasada o UUID mal formado.</div>
+                <div class="code-row"><span class="code-badge bad">404</span> Clínica, paciente, cita o comentario inexistente.</div>
+                <div class="code-row"><span class="code-badge bad">409</span> Nombre o documento repetido, o dos citas solapadas.</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head"><h2>Herramientas de soporte</h2></div>
+              <div class="tool-list">
+                <button class="btn btn-soft" id="check-health" type="button">🩺 Verificar conexión con la API</button>
+                <button class="btn btn-blue" id="open-docs" type="button">📘 Abrir documentación Swagger</button>
+                <button class="btn btn-ghost" id="copy-diagnostics" type="button">📋 Copiar diagnóstico del panel</button>
+              </div>
+              <p class="message" id="help-message" data-kind="info" hidden></p>
+            </div>
+
+            <div class="card">
+              <div class="card-head"><h2>Configuración local</h2><span class="pill warn">Se guarda en este navegador</span></div>
+              <form class="settings-form" id="settings-form" novalidate>
+                <label>
+                  Duración por defecto de una cita (min)
+                  <input id="cfg-duration" type="number" min="5" max="480" value="30" />
+                </label>
+                <label>
+                  Recordatorio mostrado en la agenda (min)
+                  <input id="cfg-reminder" type="number" min="0" max="120" value="15" />
+                </label>
+                <label class="check">
+                  <input id="cfg-weekends" type="checkbox" checked />
+                  Resaltar fines de semana en el calendario
+                </label>
+                <label class="check">
+                  <input id="cfg-compact" type="checkbox" />
+                  Usar diseño compacto
+                </label>
+                <label class="check">
+                  <input id="cfg-autorefresh" type="checkbox" />
+                  Actualizar la agenda automáticamente cada 30 s
+                </label>
+                <div class="actions">
+                  <button class="btn btn-primary" id="save-settings" type="submit">Guardar preferencias</button>
+                  <button class="btn btn-ghost" id="reset-settings" type="button">Restablecer</button>
+                </div>
+              </form>
+              <p class="settings-note">La duración elegida se aplica al formulario de citas y el recordatorio aparece en cada tarjeta de la agenda.</p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
 
     <script>
+      const $ = (id) => document.getElementById(id);
       const CLINICS_API = '/clinics';
-      const clinicForm = document.getElementById('clinic-form');
-      const clinicMessage = document.getElementById('message');
-      const submitButton = document.getElementById('submit');
-      const cancelButton = document.getElementById('cancel-edit');
-      const clinicsBody = document.getElementById('clinics-body');
-      const clinicListCard = document.getElementById('clinic-list-card');
-      const inventoryPanel = document.getElementById('inventory-panel');
-      const inventoryTitle = document.getElementById('inventory-title');
-      const inventorySubtitle = document.getElementById('inventory-subtitle');
-      const itemForm = document.getElementById('item-form');
-      const itemMessage = document.getElementById('item-message');
-      const itemSubmitButton = document.getElementById('item-submit');
-      const cancelItemButton = document.getElementById('cancel-item-edit');
-      const itemsBody = document.getElementById('items-body');
+      const AGENDA_API = '/agenda';
+      const SETTINGS_KEY = 'salud-panel-settings';
+      const DEFAULT_SETTINGS = {
+        defaultDuration: 30,
+        reminderMinutes: 15,
+        highlightWeekends: true,
+        compact: false,
+        autoRefresh: false,
+      };
 
-      let editingId = null;
-      let selectedClinicId = null;
-      let editingItemId = null;
+      const state = {
+        clinics: [],
+        selectedClinicId: null,
+        careClinicId: null,
+        editingId: null,
+        editingItemId: null,
+        editingPatientId: null,
+        editingAppointmentId: null,
+        activeAppointmentId: null,
+        agendaDate: new Date().toISOString().slice(0, 10),
+        agendaEntries: [],
+      };
+
+      let settings = { ...DEFAULT_SETTINGS };
+      let autoRefreshTimer = null;
 
       function showMessage(target, text, kind = 'info') {
         target.textContent = text;
@@ -432,11 +917,7 @@
 
       function escapeHtml(value = '') {
         return String(value).replace(/[&<>"']/g, (char) => ({
-          '&': '&amp;',
-          '<': '&lt;',
-          '>': '&gt;',
-          '"': '&quot;',
-          "'": '&#039;',
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
         })[char]);
       }
 
@@ -470,56 +951,165 @@
           error.status = response.status;
           throw error;
         }
-
         return payload;
       }
 
+      function statusPillClass(status) {
+        if (status === 'CANCELLED') return 'off';
+        if (status === 'CONFIRMED' || status === 'COMPLETED') return 'on';
+        return 'warn';
+      }
+
+      /* ---------------------- Preferencias ---------------------- */
+      function loadSettings() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+          settings = { ...DEFAULT_SETTINGS, ...stored };
+        } catch {
+          settings = { ...DEFAULT_SETTINGS };
+        }
+      }
+
+      function applySettings() {
+        $('cfg-duration').value = settings.defaultDuration;
+        $('cfg-reminder').value = settings.reminderMinutes;
+        $('cfg-weekends').checked = Boolean(settings.highlightWeekends);
+        $('cfg-compact').checked = Boolean(settings.compact);
+        $('cfg-autorefresh').checked = Boolean(settings.autoRefresh);
+        document.body.classList.toggle('compact', Boolean(settings.compact));
+        $('appointment-duration').value = settings.defaultDuration;
+        syncAutoRefresh();
+      }
+
+      function settingsFromForm() {
+        const clamp = (value, min, max, fallback) => {
+          const number = Number(value);
+          if (!Number.isFinite(number)) return fallback;
+          return Math.min(max, Math.max(min, Math.round(number)));
+        };
+        return {
+          defaultDuration: clamp($('cfg-duration').value, 5, 480, 30),
+          reminderMinutes: clamp($('cfg-reminder').value, 0, 120, 15),
+          highlightWeekends: $('cfg-weekends').checked,
+          compact: $('cfg-compact').checked,
+          autoRefresh: $('cfg-autorefresh').checked,
+        };
+      }
+
+      function syncAutoRefresh() {
+        if (autoRefreshTimer) {
+          clearInterval(autoRefreshTimer);
+          autoRefreshTimer = null;
+        }
+        if (settings.autoRefresh && document.body.dataset.view === 'agenda') {
+          autoRefreshTimer = setInterval(() => {
+            loadAgenda().catch(() => undefined);
+          }, 30000);
+        }
+      }
+
+      /* ---------------------- Navegación ---------------------- */
+      function showView(view) {
+        document.body.dataset.view = view;
+        document.querySelectorAll('[data-view-panel]').forEach((panel) => {
+          panel.classList.toggle('active', panel.dataset.viewPanel === view);
+        });
+        document.querySelectorAll('[data-view]').forEach((button) => {
+          button.classList.toggle('active', button.dataset.view === view);
+        });
+        syncAutoRefresh();
+
+        if (view === 'agenda') loadAgenda().catch((error) => showMessage($('agenda-message'), messageFrom(error), 'error'));
+        if (view === 'clinics') loadClinics().catch((error) => showMessage($('message'), messageFrom(error), 'error'));
+        if (view === 'inventory' && state.selectedClinicId) loadItems().catch((error) => showMessage($('item-message'), messageFrom(error), 'error'));
+        if (view === 'care' && state.careClinicId) loadCareData().catch((error) => showMessage($('patient-message'), messageFrom(error), 'error'));
+      }
+
+      function showCareTab(tab) {
+        document.querySelectorAll('[data-care-tab]').forEach((button) => {
+          button.classList.toggle('active', button.dataset.careTab === tab);
+        });
+        $('care-patients').hidden = tab !== 'patients';
+        $('care-appointments').hidden = tab !== 'appointments';
+        $('comments-panel').hidden = tab !== 'comments';
+        const hasAppointment = Boolean(state.activeAppointmentId);
+        $('comments-empty').hidden = tab !== 'comments' || hasAppointment;
+        $('comments-content').hidden = tab !== 'comments' || !hasAppointment;
+      }
+
+      /* ---------------------- Clínicas ---------------------- */
       function clinicDtoFromForm() {
         return {
-          name: document.getElementById('name').value.trim(),
-          phone: document.getElementById('phone').value.trim(),
-          address: document.getElementById('address').value.trim(),
-          email: document.getElementById('email').value.trim() || undefined,
-          specialty: document.getElementById('specialty').value.trim() || undefined,
-          active: document.getElementById('active').checked,
+          name: $('name').value.trim(),
+          phone: $('phone').value.trim(),
+          address: $('address').value.trim(),
+          email: $('email').value.trim() || undefined,
+          specialty: $('specialty').value.trim() || undefined,
+          active: $('active').checked,
         };
       }
 
       function fillClinicForm(clinic) {
-        document.getElementById('name').value = clinic.name ?? '';
-        document.getElementById('phone').value = clinic.phone ?? '';
-        document.getElementById('address').value = clinic.address ?? '';
-        document.getElementById('email').value = clinic.email ?? '';
-        document.getElementById('specialty').value = clinic.specialty ?? '';
-        document.getElementById('active').checked = Boolean(clinic.active);
+        $('name').value = clinic.name ?? '';
+        $('phone').value = clinic.phone ?? '';
+        $('address').value = clinic.address ?? '';
+        $('email').value = clinic.email ?? '';
+        $('specialty').value = clinic.specialty ?? '';
+        $('active').checked = Boolean(clinic.active);
       }
 
       function resetClinicForm() {
-        clinicForm.reset();
-        document.getElementById('active').checked = true;
-        editingId = null;
-        submitButton.textContent = 'Crear clínica';
-        cancelButton.hidden = true;
+        $('clinic-form').reset();
+        $('active').checked = true;
+        state.editingId = null;
+        $('submit').textContent = 'Crear clínica';
+        $('cancel-edit').hidden = true;
       }
 
-      function renderClinics(clinics) {
-        if (!clinics.length) {
-          clinicsBody.innerHTML = '<tr><td colspan="5">No hay clínicas todavía. Crea la primera ↑</td></tr>';
+      function clinicName(id) {
+        return state.clinics.find((clinic) => clinic.id === id)?.name || 'la clínica';
+      }
+
+      function fillClinicSelects() {
+        const options = state.clinics
+          .map((clinic) => `<option value="${escapeHtml(clinic.id)}">${escapeHtml(clinic.name)}</option>`)
+          .join('');
+
+        const inventorySelect = $('inventory-clinic-select');
+        const careSelect = $('care-clinic-select');
+        const agendaFilter = $('agenda-clinic-filter');
+        const previousInventory = state.selectedClinicId || inventorySelect.value;
+        const previousCare = state.careClinicId || careSelect.value;
+        const previousFilter = agendaFilter.value;
+
+        inventorySelect.innerHTML = '<option value="">Selecciona una clínica…</option>' + options;
+        careSelect.innerHTML = '<option value="">Selecciona una clínica…</option>' + options;
+        agendaFilter.innerHTML = '<option value="">Todas las clínicas</option>' + options;
+
+        if (state.clinics.some((clinic) => clinic.id === previousInventory)) inventorySelect.value = previousInventory;
+        if (state.clinics.some((clinic) => clinic.id === previousCare)) careSelect.value = previousCare;
+        if (!previousFilter || state.clinics.some((clinic) => clinic.id === previousFilter)) agendaFilter.value = previousFilter;
+      }
+
+      function renderClinics() {
+        if (!state.clinics.length) {
+          $('clinics-body').innerHTML = '<tr><td colspan="5">No hay clínicas todavía. Crea la primera ↑</td></tr>';
           return;
         }
 
-        clinicsBody.innerHTML = clinics.map((clinic) => `
-          <tr class="${clinic.id === selectedClinicId || clinic.id === careClinicId ? 'selected' : ''}">
+        $('clinics-body').innerHTML = state.clinics.map((clinic) => `
+          <tr class="${clinic.id === state.selectedClinicId || clinic.id === state.careClinicId ? 'selected' : ''}">
             <td><strong>${escapeHtml(clinic.name)}</strong><br /><code>${escapeHtml(clinic.id)}</code></td>
             <td>${escapeHtml(clinic.phone)}</td>
             <td>${escapeHtml(clinic.address)}</td>
             <td><span class="pill ${clinic.active ? 'on' : 'off'}">${clinic.active ? 'Activa' : 'Inactiva'}</span></td>
             <td>
               <div class="row-actions">
-                <button class="small" type="button" data-action="inventory" data-id="${escapeHtml(clinic.id)}" data-name="${escapeHtml(clinic.name)}">Inventario</button>
-                <button class="small" type="button" data-action="care" data-id="${escapeHtml(clinic.id)}" data-name="${escapeHtml(clinic.name)}">Pacientes y citas</button>
-                <button class="small" type="button" data-action="edit" data-id="${escapeHtml(clinic.id)}">Editar</button>
-                <button class="danger" type="button" data-action="delete" data-id="${escapeHtml(clinic.id)}">Eliminar</button>
+                <button class="btn btn-soft btn-small" type="button" data-action="care" data-id="${escapeHtml(clinic.id)}">🩺 Atención</button>
+                <button class="btn btn-ghost btn-small" type="button" data-action="inventory" data-id="${escapeHtml(clinic.id)}">📦 Inventario</button>
+                <button class="btn btn-ghost btn-small" type="button" data-action="agenda" data-id="${escapeHtml(clinic.id)}">📅 Agenda</button>
+                <button class="btn btn-ghost btn-small" type="button" data-action="edit" data-id="${escapeHtml(clinic.id)}">✏️ Editar</button>
+                <button class="btn btn-danger btn-small" type="button" data-action="delete" data-id="${escapeHtml(clinic.id)}">🗑 Eliminar</button>
               </div>
             </td>
           </tr>
@@ -527,139 +1117,50 @@
       }
 
       async function loadClinics() {
-        const clinics = await request(CLINICS_API);
-        renderClinics(clinics);
-        showMessage(clinicMessage, `${clinics.length} clínica(s) cargadas.`, 'info');
+        state.clinics = await request(CLINICS_API);
+        renderClinics();
+        fillClinicSelects();
+        return state.clinics;
       }
 
-      clinicForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const dto = clinicDtoFromForm();
-
-        try {
-          if (editingId) {
-            await request(`${CLINICS_API}/${editingId}`, { method: 'PATCH', body: JSON.stringify(dto) });
-            showMessage(clinicMessage, 'Clínica actualizada correctamente.', 'success');
-          } else {
-            await request(CLINICS_API, { method: 'POST', body: JSON.stringify(dto) });
-            showMessage(clinicMessage, 'Clínica creada correctamente.', 'success');
-          }
-          resetClinicForm();
-          await loadClinics();
-        } catch (error) {
-          showMessage(clinicMessage, messageFrom(error), 'error');
-        }
-      });
-
-      cancelButton.addEventListener('click', () => {
-        resetClinicForm();
-        showMessage(clinicMessage, 'Edición cancelada.', 'info');
-      });
-
-      document.getElementById('refresh').addEventListener('click', async () => {
-        try {
-          await loadClinics();
-        } catch (error) {
-          showMessage(clinicMessage, messageFrom(error), 'error');
-        }
-      });
-
-      clinicsBody.addEventListener('click', async (event) => {
-        const button = event.target.closest('button[data-action]');
-        if (!button) return;
-
-        const id = button.dataset.id;
-        const action = button.dataset.action;
-
-        if (action === 'edit') {
-          try {
-            const clinic = await request(`${CLINICS_API}/${id}`);
-            fillClinicForm(clinic);
-            editingId = id;
-            submitButton.textContent = 'Guardar cambios';
-            cancelButton.hidden = false;
-            showMessage(clinicMessage, 'Editando clínica. Cambia los datos y guarda.', 'info');
-            clinicForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          } catch (error) {
-            showMessage(clinicMessage, messageFrom(error), 'error');
-          }
-        }
-
-        if (action === 'delete') {
-          if (!window.confirm('¿Eliminar esta clínica? Su inventario también se borrará.')) return;
-          try {
-            await request(`${CLINICS_API}/${id}`, { method: 'DELETE' });
-            showMessage(clinicMessage, 'Clínica eliminada.', 'success');
-            if (selectedClinicId === id) hideInventory();
-            if (careClinicId === id) hideCare();
-            await loadClinics();
-          } catch (error) {
-            showMessage(clinicMessage, messageFrom(error), 'error');
-          }
-        }
-
-        if (action === 'care') {
-          await openCare(id, button.dataset.name);
-          return;
-        }
-
-        if (action === 'inventory') {
-          selectedClinicId = id;
-          editingItemId = null;
-          inventoryTitle.textContent = `Inventario de ${button.dataset.name || 'la clínica'}`;
-          inventorySubtitle.textContent = `Clínica ${id}`;
-          inventoryPanel.hidden = false;
-          resetItemForm();
-          await loadClinics();
-          try {
-            await loadItems();
-          } catch (error) {
-            showMessage(itemMessage, messageFrom(error), 'error');
-          }
-          inventoryPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      });
-
-      function itemsUrl() {
-        return `${CLINICS_API}/${selectedClinicId}/items`;
-      }
+      /* ---------------------- Inventario ---------------------- */
+      function itemsUrl() { return `${CLINICS_API}/${state.selectedClinicId}/items`; }
 
       function itemDtoFromForm() {
         return {
-          name: document.getElementById('item-name').value.trim(),
-          sku: document.getElementById('item-sku').value.trim() || undefined,
-          quantity: Number(document.getElementById('item-quantity').value || 0),
-          minStock: Number(document.getElementById('item-min-stock').value || 0),
-          unit: document.getElementById('item-unit').value.trim() || undefined,
-          description: document.getElementById('item-description').value.trim() || undefined,
+          name: $('item-name').value.trim(),
+          sku: $('item-sku').value.trim() || undefined,
+          quantity: Number($('item-quantity').value || 0),
+          minStock: Number($('item-min-stock').value || 0),
+          unit: $('item-unit').value.trim() || undefined,
+          description: $('item-description').value.trim() || undefined,
         };
       }
 
       function fillItemForm(item) {
-        document.getElementById('item-name').value = item.name ?? '';
-        document.getElementById('item-sku').value = item.sku ?? '';
-        document.getElementById('item-quantity').value = item.quantity ?? 0;
-        document.getElementById('item-min-stock').value = item.minStock ?? 0;
-        document.getElementById('item-unit').value = item.unit ?? '';
-        document.getElementById('item-description').value = item.description ?? '';
+        $('item-name').value = item.name ?? '';
+        $('item-sku').value = item.sku ?? '';
+        $('item-quantity').value = item.quantity ?? 0;
+        $('item-min-stock').value = item.minStock ?? 0;
+        $('item-unit').value = item.unit ?? '';
+        $('item-description').value = item.description ?? '';
       }
 
       function resetItemForm() {
-        itemForm.reset();
-        document.getElementById('item-quantity').value = 0;
-        document.getElementById('item-min-stock').value = 0;
-        editingItemId = null;
-        itemSubmitButton.textContent = 'Agregar insumo';
-        cancelItemButton.hidden = true;
+        $('item-form').reset();
+        $('item-quantity').value = 0;
+        $('item-min-stock').value = 0;
+        state.editingItemId = null;
+        $('item-submit').textContent = 'Agregar insumo';
+        $('cancel-item-edit').hidden = true;
       }
 
       function renderItems(items) {
         if (!items.length) {
-          itemsBody.innerHTML = '<tr><td colspan="6">Esta clínica aún no tiene insumos.</td></tr>';
+          $('items-body').innerHTML = '<tr><td colspan="6">Esta clínica aún no tiene insumos.</td></tr>';
           return;
         }
-
-        itemsBody.innerHTML = items.map((item) => {
+        $('items-body').innerHTML = items.map((item) => {
           const low = item.quantity <= item.minStock;
           return `
             <tr>
@@ -670,8 +1171,8 @@
               <td><span class="pill ${low ? 'warn' : 'on'}">${low ? 'Stock bajo' : 'OK'}</span></td>
               <td>
                 <div class="row-actions">
-                  <button class="small" type="button" data-action="edit-item" data-id="${escapeHtml(item.id)}">Editar</button>
-                  <button class="danger" type="button" data-action="delete-item" data-id="${escapeHtml(item.id)}">Eliminar</button>
+                  <button class="btn btn-soft btn-small" type="button" data-action="edit-item" data-id="${escapeHtml(item.id)}">✏️ Editar</button>
+                  <button class="btn btn-danger btn-small" type="button" data-action="delete-item" data-id="${escapeHtml(item.id)}">🗑 Eliminar</button>
                 </div>
               </td>
             </tr>
@@ -680,165 +1181,66 @@
       }
 
       async function loadItems() {
+        if (!state.selectedClinicId) {
+          $('items-body').innerHTML = '<tr><td colspan="6">Selecciona una clínica para ver su inventario.</td></tr>';
+          return;
+        }
         const items = await request(itemsUrl());
         renderItems(items);
-        showMessage(itemMessage, `${items.length} insumo(s) cargados.`, 'info');
+        showMessage($('item-message'), `${items.length} insumo(s) cargados.`, 'info');
       }
 
-      function hideInventory() {
-        selectedClinicId = null;
-        editingItemId = null;
-        inventoryPanel.hidden = true;
-        itemsBody.innerHTML = '<tr><td colspan="6">Selecciona una clínica para ver su inventario.</td></tr>';
+      async function openInventory(clinicId) {
+        state.selectedClinicId = clinicId;
+        $('inventory-clinic-select').value = clinicId;
+        $('inventory-title').textContent = `Inventario de ${clinicName(clinicId)}`;
+        $('inventory-subtitle').textContent = `Clínica ${clinicId}`;
         resetItemForm();
-        loadClinics().catch(() => undefined);
+        renderClinics();
+        showView('inventory');
       }
 
-      itemForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const dto = itemDtoFromForm();
-
-        try {
-          if (editingItemId) {
-            await request(`${itemsUrl()}/${editingItemId}`, { method: 'PATCH', body: JSON.stringify(dto) });
-            showMessage(itemMessage, 'Insumo actualizado.', 'success');
-          } else {
-            await request(itemsUrl(), { method: 'POST', body: JSON.stringify(dto) });
-            showMessage(itemMessage, 'Insumo agregado.', 'success');
-          }
-          resetItemForm();
-          await loadItems();
-        } catch (error) {
-          showMessage(itemMessage, messageFrom(error), 'error');
-        }
-      });
-
-      cancelItemButton.addEventListener('click', () => {
-        resetItemForm();
-        showMessage(itemMessage, 'Edición de insumo cancelada.', 'info');
-      });
-
-      document.getElementById('back-to-clinics').addEventListener('click', () => {
-        hideInventory();
-        clinicListCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-
-      itemsBody.addEventListener('click', async (event) => {
-        const button = event.target.closest('button[data-action]');
-        if (!button) return;
-
-        const id = button.dataset.id;
-
-        if (button.dataset.action === 'edit-item') {
-          try {
-            const item = await request(`${itemsUrl()}/${id}`);
-            fillItemForm(item);
-            editingItemId = id;
-            itemSubmitButton.textContent = 'Guardar cambios';
-            cancelItemButton.hidden = false;
-            showMessage(itemMessage, 'Editando insumo. Guarda para aplicar el PATCH.', 'info');
-            itemForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          } catch (error) {
-            showMessage(itemMessage, messageFrom(error), 'error');
-          }
-        }
-
-        if (button.dataset.action === 'delete-item') {
-          if (!window.confirm('¿Eliminar este insumo?')) return;
-          try {
-            await request(`${itemsUrl()}/${id}`, { method: 'DELETE' });
-            showMessage(itemMessage, 'Insumo eliminado.', 'success');
-            await loadItems();
-          } catch (error) {
-            showMessage(itemMessage, messageFrom(error), 'error');
-          }
-        }
-      });
-
-      const carePanel = document.getElementById('care-panel');
-      const careTitle = document.getElementById('care-title');
-      const careSubtitle = document.getElementById('care-subtitle');
-      const patientForm = document.getElementById('patient-form');
-      const patientMessage = document.getElementById('patient-message');
-      const patientSubmitButton = document.getElementById('patient-submit');
-      const cancelPatientButton = document.getElementById('cancel-patient-edit');
-      const patientsBody = document.getElementById('patients-body');
-      const appointmentForm = document.getElementById('appointment-form');
-      const appointmentMessage = document.getElementById('appointment-message');
-      const appointmentSubmitButton = document.getElementById('appointment-submit');
-      const cancelAppointmentButton = document.getElementById('cancel-appointment-edit');
-      const appointmentPatient = document.getElementById('appointment-patient');
-      const appointmentDate = document.getElementById('appointment-date');
-      const appointmentTime = document.getElementById('appointment-time');
-      const appointmentDuration = document.getElementById('appointment-duration');
-      const appointmentStatus = document.getElementById('appointment-status');
-      const appointmentReason = document.getElementById('appointment-reason');
-      const appointmentNotes = document.getElementById('appointment-notes');
-      const appointmentsBody = document.getElementById('appointments-body');
-      const commentsPanel = document.getElementById('comments-panel');
-      const commentsTitle = document.getElementById('comments-title');
-      const commentForm = document.getElementById('comment-form');
-      const commentMessage = document.getElementById('comment-message');
-      const commentAuthor = document.getElementById('comment-author');
-      const commentBody = document.getElementById('comment-body');
-      const commentsBody = document.getElementById('comments-body');
-
-      let careClinicId = null;
-      let editingPatientId = null;
-      let editingAppointmentId = null;
-      let activeAppointmentId = null;
-
-      function patientsUrl() {
-        return `${CLINICS_API}/${careClinicId}/patients`;
-      }
-
-      function appointmentsUrl() {
-        return `${CLINICS_API}/${careClinicId}/appointments`;
-      }
-
-      function commentsUrl(appointmentId) {
-        return `${appointmentsUrl()}/${appointmentId}/comments`;
-      }
+      /* ---------------------- Pacientes, citas y comentarios ---------------------- */
+      function patientsUrl() { return `${CLINICS_API}/${state.careClinicId}/patients`; }
+      function appointmentsUrl() { return `${CLINICS_API}/${state.careClinicId}/appointments`; }
+      function commentsUrl(appointmentId) { return `${appointmentsUrl()}/${appointmentId}/comments`; }
 
       function patientDtoFromForm() {
         return {
-          name: document.getElementById('patient-name').value.trim(),
-          document: document.getElementById('patient-document').value.trim() || undefined,
-          phone: document.getElementById('patient-phone').value.trim(),
-          email: document.getElementById('patient-email').value.trim() || undefined,
-          birthDate: document.getElementById('patient-birth').value || undefined,
-          notes: document.getElementById('patient-notes').value.trim() || undefined,
-          active: document.getElementById('patient-active').checked,
+          name: $('patient-name').value.trim(),
+          document: $('patient-document').value.trim() || undefined,
+          phone: $('patient-phone').value.trim(),
+          email: $('patient-email').value.trim() || undefined,
+          birthDate: $('patient-birth').value || undefined,
+          notes: $('patient-notes').value.trim() || undefined,
+          active: $('patient-active').checked,
         };
       }
 
       function fillPatientForm(patient) {
-        document.getElementById('patient-name').value = patient.name ?? '';
-        document.getElementById('patient-document').value = patient.document ?? '';
-        document.getElementById('patient-phone').value = patient.phone ?? '';
-        document.getElementById('patient-email').value = patient.email ?? '';
-        document.getElementById('patient-birth').value = patient.birthDate
-          ? String(patient.birthDate).slice(0, 10)
-          : '';
-        document.getElementById('patient-notes').value = patient.notes ?? '';
-        document.getElementById('patient-active').checked = Boolean(patient.active);
+        $('patient-name').value = patient.name ?? '';
+        $('patient-document').value = patient.document ?? '';
+        $('patient-phone').value = patient.phone ?? '';
+        $('patient-email').value = patient.email ?? '';
+        $('patient-birth').value = patient.birthDate ? String(patient.birthDate).slice(0, 10) : '';
+        $('patient-notes').value = patient.notes ?? '';
+        $('patient-active').checked = Boolean(patient.active);
       }
 
       function resetPatientForm() {
-        patientForm.reset();
-        document.getElementById('patient-active').checked = true;
-        editingPatientId = null;
-        patientSubmitButton.textContent = 'Registrar paciente';
-        cancelPatientButton.hidden = true;
+        $('patient-form').reset();
+        $('patient-active').checked = true;
+        state.editingPatientId = null;
+        $('patient-submit').textContent = 'Registrar paciente';
+        $('cancel-patient-edit').hidden = true;
       }
 
       function renderPatients(patients) {
         if (!patients.length) {
-          patientsBody.innerHTML = '<tr><td colspan="5">Esta clínica aún no tiene pacientes.</td></tr>';
+          $('patients-body').innerHTML = '<tr><td colspan="5">Esta clínica aún no tiene pacientes.</td></tr>';
           return;
         }
-
-        patientsBody.innerHTML = patients.map((patient) => `
+        $('patients-body').innerHTML = patients.map((patient) => `
           <tr>
             <td><strong>${escapeHtml(patient.name)}</strong><br /><code>${escapeHtml(patient.id)}</code></td>
             <td>${patient.document ? escapeHtml(patient.document) : '—'}</td>
@@ -846,8 +1248,8 @@
             <td><span class="pill ${patient.active ? 'on' : 'off'}">${patient.active ? 'Activo' : 'Inactivo'}</span></td>
             <td>
               <div class="row-actions">
-                <button class="small" type="button" data-action="edit-patient" data-id="${escapeHtml(patient.id)}">Editar</button>
-                <button class="danger" type="button" data-action="delete-patient" data-id="${escapeHtml(patient.id)}">Eliminar</button>
+                <button class="btn btn-soft btn-small" type="button" data-action="edit-patient" data-id="${escapeHtml(patient.id)}">✏️ Editar</button>
+                <button class="btn btn-danger btn-small" type="button" data-action="delete-patient" data-id="${escapeHtml(patient.id)}">🗑 Eliminar</button>
               </div>
             </td>
           </tr>
@@ -857,85 +1259,79 @@
       async function loadPatients() {
         const patients = await request(patientsUrl());
         renderPatients(patients);
-        showMessage(patientMessage, `${patients.length} paciente(s) cargados.`, 'info');
+        showMessage($('patient-message'), `${patients.length} paciente(s) cargados.`, 'info');
         return patients;
       }
 
       async function loadPatientOptions() {
         const patients = await request(patientsUrl());
-        const previous = appointmentPatient.value;
-        appointmentPatient.innerHTML = patients.length
+        const previous = $('appointment-patient').value;
+        $('appointment-patient').innerHTML = patients.length
           ? patients.map((patient) => `<option value="${escapeHtml(patient.id)}">${escapeHtml(patient.name)}${patient.document ? ' · ' + escapeHtml(patient.document) : ''}</option>`).join('')
           : '<option value="">Registra un paciente primero</option>';
         if (previous && patients.some((patient) => patient.id === previous)) {
-          appointmentPatient.value = previous;
+          $('appointment-patient').value = previous;
         }
       }
 
       function appointmentDtoFromForm() {
-        const date = appointmentDate.value;
-        const time = appointmentTime.value;
-        if (!appointmentPatient.value) throw new Error('Registra un paciente primero');
+        const date = $('appointment-date').value;
+        const time = $('appointment-time').value;
+        if (!$('appointment-patient').value) throw new Error('Registra un paciente primero');
         if (!date || !time) throw new Error('La fecha y la hora son obligatorias');
         const scheduledAt = new Date(`${date}T${time}:00.000Z`);
         if (Number.isNaN(scheduledAt.getTime())) throw new Error('Fecha o hora no válidas');
 
         return {
-          patientId: appointmentPatient.value,
+          patientId: $('appointment-patient').value,
           scheduledAt: scheduledAt.toISOString(),
-          durationMinutes: Number(appointmentDuration.value || 30),
-          status: appointmentStatus.value,
-          reason: appointmentReason.value.trim(),
-          notes: appointmentNotes.value.trim() || undefined,
+          durationMinutes: Number($('appointment-duration').value || settings.defaultDuration),
+          status: $('appointment-status').value,
+          reason: $('appointment-reason').value.trim(),
+          notes: $('appointment-notes').value.trim() || undefined,
         };
       }
 
       function fillAppointmentForm(appointment) {
         const scheduled = new Date(appointment.scheduledAt);
-        appointmentPatient.value = appointment.patientId;
-        appointmentDate.value = scheduled.toISOString().slice(0, 10);
-        appointmentTime.value = scheduled.toISOString().slice(11, 16);
-        appointmentDuration.value = appointment.durationMinutes;
-        appointmentStatus.value = appointment.status;
-        appointmentReason.value = appointment.reason ?? '';
-        appointmentNotes.value = appointment.notes ?? '';
+        $('appointment-patient').value = appointment.patientId;
+        $('appointment-date').value = scheduled.toISOString().slice(0, 10);
+        $('appointment-time').value = scheduled.toISOString().slice(11, 16);
+        $('appointment-duration').value = appointment.durationMinutes;
+        $('appointment-status').value = appointment.status;
+        $('appointment-reason').value = appointment.reason ?? '';
+        $('appointment-notes').value = appointment.notes ?? '';
       }
 
       function resetAppointmentForm() {
-        appointmentForm.reset();
-        appointmentDuration.value = 30;
-        appointmentStatus.value = 'PENDING';
-        editingAppointmentId = null;
-        appointmentSubmitButton.textContent = 'Programar cita';
-        cancelAppointmentButton.hidden = true;
+        $('appointment-form').reset();
+        $('appointment-duration').value = settings.defaultDuration;
+        $('appointment-status').value = 'PENDING';
+        state.editingAppointmentId = null;
+        $('appointment-submit').textContent = 'Programar cita';
+        $('cancel-appointment-edit').hidden = true;
       }
 
       function renderAppointments(appointments) {
         if (!appointments.length) {
-          appointmentsBody.innerHTML = '<tr><td colspan="6">Aún no hay citas en esta clínica.</td></tr>';
+          $('appointments-body').innerHTML = '<tr><td colspan="6">Aún no hay citas en esta clínica.</td></tr>';
           return;
         }
-
-        appointmentsBody.innerHTML = appointments.map((appointment) => {
+        $('appointments-body').innerHTML = appointments.map((appointment) => {
           const scheduled = new Date(appointment.scheduledAt);
           const label = scheduled.toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
-          const statusClass = appointment.status === 'CANCELLED'
-            ? 'off'
-            : appointment.status === 'CONFIRMED' || appointment.status === 'COMPLETED'
-              ? 'on'
-              : 'warn';
           return `
             <tr>
               <td><strong>${escapeHtml(label)}</strong><br /><code>${escapeHtml(appointment.id)}</code></td>
               <td>${escapeHtml(appointment.patient?.name || appointment.patientId)}</td>
               <td>${escapeHtml(appointment.reason)}</td>
               <td>${appointment.durationMinutes} min</td>
-              <td><span class="pill ${statusClass}">${escapeHtml(appointment.status)}</span></td>
+              <td><span class="pill ${statusPillClass(appointment.status)}">${escapeHtml(appointment.status)}</span></td>
               <td>
                 <div class="row-actions">
-                  <button class="small" type="button" data-action="comments" data-id="${escapeHtml(appointment.id)}" data-reason="${escapeHtml(appointment.reason)}">Comentarios</button>
-                  <button class="small" type="button" data-action="edit-appointment" data-id="${escapeHtml(appointment.id)}">Editar</button>
-                  <button class="danger" type="button" data-action="delete-appointment" data-id="${escapeHtml(appointment.id)}">Eliminar</button>
+                  <button class="btn btn-soft btn-small" type="button" data-action="comments" data-id="${escapeHtml(appointment.id)}" data-reason="${escapeHtml(appointment.reason)}">💬 Comentarios</button>
+                  <button class="btn btn-ghost btn-small" type="button" data-action="edit-appointment" data-id="${escapeHtml(appointment.id)}">✏️ Editar</button>
+                  <button class="btn btn-danger btn-small" type="button" data-action="delete-appointment" data-id="${escapeHtml(appointment.id)}">🗑 Eliminar</button>
                 </div>
               </td>
             </tr>
@@ -946,114 +1342,395 @@
       async function loadAppointments() {
         const appointments = await request(appointmentsUrl());
         renderAppointments(appointments);
-        showMessage(appointmentMessage, `${appointments.length} cita(s) cargadas.`, 'info');
+        showMessage($('appointment-message'), `${appointments.length} cita(s) cargadas.`, 'info');
       }
 
       function renderComments(comments) {
         if (!comments.length) {
-          commentsBody.innerHTML = '<tr><td colspan="4">Sin comentarios todavía.</td></tr>';
+          $('comments-body').innerHTML = '<tr><td colspan="4">Sin comentarios todavía.</td></tr>';
           return;
         }
-
-        commentsBody.innerHTML = comments.map((comment) => `
+        $('comments-body').innerHTML = comments.map((comment) => `
           <tr>
             <td>${escapeHtml(new Date(comment.createdAt).toISOString().slice(0, 16).replace('T', ' '))}</td>
             <td><strong>${escapeHtml(comment.author)}</strong></td>
             <td>${escapeHtml(comment.body)}</td>
-            <td><button class="danger" type="button" data-action="delete-comment" data-id="${escapeHtml(comment.id)}">Eliminar</button></td>
+            <td><button class="btn btn-danger btn-small" type="button" data-action="delete-comment" data-id="${escapeHtml(comment.id)}">🗑 Eliminar</button></td>
           </tr>
         `).join('');
       }
 
       async function loadComments() {
-        const comments = await request(commentsUrl(activeAppointmentId));
+        const comments = await request(commentsUrl(state.activeAppointmentId));
         renderComments(comments);
-        showMessage(commentMessage, `${comments.length} comentario(s) en el historial.`, 'info');
+        showMessage($('comment-message'), `${comments.length} comentario(s) en el historial.`, 'info');
       }
 
       async function openComments(appointmentId, reason) {
-        activeAppointmentId = appointmentId;
-        commentsPanel.hidden = false;
-        commentsTitle.textContent = `Historial de comentarios · ${reason || 'cita'}`;
-        commentForm.reset();
+        state.activeAppointmentId = appointmentId;
+        $('comments-title').textContent = `Historial de comentarios · ${reason || 'cita'}`;
+        $('comment-form').reset();
+        showCareTab('comments');
+        try { await loadComments(); } catch (error) { showMessage($('comment-message'), messageFrom(error), 'error'); }
+      }
+
+      async function loadCareData() {
+        await loadPatients();
+        await loadPatientOptions();
+        await loadAppointments();
+      }
+
+      async function openCare(clinicId) {
+        state.careClinicId = clinicId;
+        $('care-clinic-select').value = clinicId;
+        $('care-title').textContent = `Pacientes y citas de ${clinicName(clinicId)}`;
+        $('care-subtitle').textContent = `Clínica ${clinicId}`;
+        state.activeAppointmentId = null;
+        resetPatientForm();
+        resetAppointmentForm();
+        renderClinics();
+        showView('care');
+        showCareTab('patients');
+      }
+
+      /* ---------------------- Agenda 3D ---------------------- */
+      function filteredAgendaEntries() {
+        const clinicId = $('agenda-clinic-filter').value;
+        return clinicId
+          ? state.agendaEntries.filter((entry) => entry.clinic.id === clinicId)
+          : state.agendaEntries;
+      }
+
+      function renderAgendaStats(entries) {
+        $('agenda-total').textContent = entries.length;
+        $('agenda-confirmed').textContent = entries.filter((entry) => ['CONFIRMED', 'COMPLETED'].includes(entry.status)).length;
+        $('agenda-pending').textContent = entries.filter((entry) => entry.status === 'PENDING').length;
+        $('agenda-cancelled').textContent = entries.filter((entry) => entry.status === 'CANCELLED').length;
+      }
+
+      function renderCalendar(entries) {
+        const [year, month] = state.agendaDate.split('-').map(Number);
+        const firstDay = new Date(Date.UTC(year, month - 1, 1));
+        const offset = (firstDay.getUTCDay() + 6) % 7;
+        const gridStart = new Date(firstDay.getTime() - offset * 86400000);
+        const counts = new Map();
+        for (const entry of entries) {
+          const key = String(entry.scheduledAt).slice(0, 10);
+          counts.set(key, (counts.get(key) || 0) + 1);
+        }
+
+        const label = new Intl.DateTimeFormat('es-ES', {
+          month: 'long', year: 'numeric', timeZone: 'UTC',
+        }).format(firstDay);
+        $('calendar-month').textContent = label.charAt(0).toUpperCase() + label.slice(1);
+        $('calendar-badge').textContent = `${year}`;
+
+        let html = '';
+        for (let index = 0; index < 42; index += 1) {
+          const day = new Date(gridStart.getTime() + index * 86400000);
+          const iso = day.toISOString().slice(0, 10);
+          const count = counts.get(iso) || 0;
+          const weekend = day.getUTCDay() === 0 || day.getUTCDay() === 6;
+          const classes = ['calendar-day'];
+          if (day.getUTCMonth() !== month - 1 || day.getUTCFullYear() !== year) classes.push('other');
+          if (weekend && settings.highlightWeekends) classes.push('weekend');
+          if (iso === state.agendaDate) classes.push('selected');
+          if (count) classes.push('has-events');
+          html += `
+            <button class="${classes.join(' ')}" type="button" data-date="${iso}" aria-label="${iso}, ${count} cita(s)">
+              <span class="day-number">${day.getUTCDate()}</span>
+              <span class="day-count">${count ? `<span class="day-dot"></span>${count} cita(s)` : '·'}</span>
+            </button>
+          `;
+        }
+        $('calendar-grid').innerHTML = html;
+      }
+
+      function renderTimeline(entries) {
+        if (!entries.length) {
+          $('agenda-timeline').innerHTML = `
+            <div class="empty-state">
+              <strong>Sin citas para este día</strong>
+              Cambia la fecha, elige otra clínica o programa una cita en Pacientes y citas.
+            </div>`;
+          return;
+        }
+
+        $('agenda-timeline').innerHTML = [...entries]
+          .sort((a, b) => String(a.scheduledAt).localeCompare(String(b.scheduledAt)))
+          .map((entry) => {
+            const scheduled = new Date(entry.scheduledAt);
+            const time = scheduled.toISOString().slice(11, 16);
+            const reminder = settings.reminderMinutes
+              ? `Recordatorio ${settings.reminderMinutes} min antes`
+              : 'Sin recordatorio';
+            return `
+              <article class="agenda-card status-${escapeHtml(entry.status)}">
+                <div class="agenda-time"><strong>${time}</strong><span>${entry.durationMinutes} min</span></div>
+                <div>
+                  <p class="agenda-clinic">✚ ${escapeHtml(entry.clinic.name)}</p>
+                  <h4>${escapeHtml(entry.patient.name)}</h4>
+                  <p>${escapeHtml(entry.reason)} · ${reminder}</p>
+                </div>
+                <div class="agenda-side">
+                  <span class="pill ${statusPillClass(entry.status)}">${escapeHtml(entry.status)}</span>
+                  <button class="btn btn-soft btn-small" type="button" data-action="care" data-clinic-id="${escapeHtml(entry.clinic.id)}">Atender →</button>
+                </div>
+              </article>
+            `;
+          }).join('');
+      }
+
+      async function loadAgenda() {
+        const date = $('agenda-date').value || state.agendaDate;
+        state.agendaDate = date;
+        $('top-date').textContent = `📅 ${date}`;
         try {
-          await loadComments();
-          commentsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          const entries = await request(`${AGENDA_API}?date=${encodeURIComponent(date)}`);
+          state.agendaEntries = Array.isArray(entries) ? entries : [];
+          const visible = filteredAgendaEntries();
+          renderAgendaStats(visible);
+          renderCalendar(visible);
+          renderTimeline(visible);
+          const label = new Intl.DateTimeFormat('es-ES', {
+            weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC',
+          }).format(new Date(`${date}T00:00:00.000Z`));
+          $('agenda-date-label').textContent = `${label.charAt(0).toUpperCase() + label.slice(1)} · ${visible.length} cita(s)`;
+          showMessage($('agenda-message'), '', 'info');
         } catch (error) {
-          showMessage(commentMessage, messageFrom(error), 'error');
+          showMessage($('agenda-message'), messageFrom(error), 'error');
         }
       }
 
-      async function openCare(clinicId, clinicName) {
-        careClinicId = clinicId;
-        careTitle.textContent = `Pacientes y citas de ${clinicName || 'la clínica'}`;
-        careSubtitle.textContent = `Clínica ${clinicId}`;
-        carePanel.hidden = false;
-        activeAppointmentId = null;
-        commentsPanel.hidden = true;
-        resetPatientForm();
-        resetAppointmentForm();
-        await loadClinics();
+      function moveAgendaDate(days) {
+        const date = new Date(`${state.agendaDate}T00:00:00.000Z`);
+        date.setUTCDate(date.getUTCDate() + days);
+        state.agendaDate = date.toISOString().slice(0, 10);
+        $('agenda-date').value = state.agendaDate;
+        loadAgenda().catch(() => undefined);
+      }
+
+      /* ----------------------Ayuda---------------------- */
+      async function checkHealth() {
         try {
-          await loadPatients();
-          await loadPatientOptions();
-          await loadAppointments();
+          await request('/health');
+          showMessage($('help-message'), 'Conexión correcta: la API responde.', 'success');
         } catch (error) {
-          showMessage(patientMessage, messageFrom(error), 'error');
+          showMessage($('help-message'), messageFrom(error), 'error');
         }
-        carePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
 
-      function hideCare() {
-        careClinicId = null;
-        activeAppointmentId = null;
-        carePanel.hidden = true;
-        commentsPanel.hidden = true;
-        resetPatientForm();
-        resetAppointmentForm();
-        loadClinics().catch(() => undefined);
-      }
-
-      patientForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const dto = patientDtoFromForm();
+      async function copyDiagnostics() {
+        const text = [
+          `Panel: ${location.href}`,
+          `Fecha de agenda: ${state.agendaDate}`,
+          `Clínicas registradas: ${state.clinics.length}`,
+          `Citas visibles: ${filteredAgendaEntries().length}`,
+          `Duración por defecto: ${settings.defaultDuration} min`,
+        ].join('\n');
         try {
-          if (editingPatientId) {
-            await request(`${patientsUrl()}/${editingPatientId}`, { method: 'PATCH', body: JSON.stringify(dto) });
-            showMessage(patientMessage, 'Paciente actualizado.', 'success');
+          if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(text);
           } else {
-            await request(patientsUrl(), { method: 'POST', body: JSON.stringify(dto) });
-            showMessage(patientMessage, 'Paciente registrado.', 'success');
+            const area = document.createElement('textarea');
+            area.value = text;
+            document.body.appendChild(area);
+            area.select();
+            document.execCommand('copy');
+            area.remove();
+          }
+          showMessage($('help-message'), 'Diagnóstico copiado al portapapeles.', 'success');
+        } catch {
+          showMessage($('help-message'), 'No se pudo copiar el diagnóstico.', 'error');
+        }
+      }
+
+      /* ---------------------- Eventos ---------------------- */
+      document.querySelectorAll('[data-view]').forEach((button) => {
+        button.addEventListener('click', () => showView(button.dataset.view));
+      });
+
+      document.querySelectorAll('[data-care-tab]').forEach((button) => {
+        button.addEventListener('click', () => showCareTab(button.dataset.careTab));
+      });
+
+      $('clinic-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        try {
+          if (state.editingId) {
+            await request(`${CLINICS_API}/${state.editingId}`, { method: 'PATCH', body: JSON.stringify(clinicDtoFromForm()) });
+            showMessage($('message'), 'Clínica actualizada correctamente.', 'success');
+          } else {
+            await request(CLINICS_API, { method: 'POST', body: JSON.stringify(clinicDtoFromForm()) });
+            showMessage($('message'), 'Clínica creada correctamente.', 'success');
+          }
+          resetClinicForm();
+          await loadClinics();
+        } catch (error) {
+          showMessage($('message'), messageFrom(error), 'error');
+        }
+      });
+
+      $('cancel-edit').addEventListener('click', () => {
+        resetClinicForm();
+        showMessage($('message'), 'Edición cancelada.', 'info');
+      });
+
+      $('refresh').addEventListener('click', async () => {
+        try { await loadClinics(); } catch (error) { showMessage($('message'), messageFrom(error), 'error'); }
+      });
+
+      $('clinics-body').addEventListener('click', async (event) => {
+        const button = event.target.closest('button[data-action]');
+        if (!button) return;
+        const id = button.dataset.id;
+        const action = button.dataset.action;
+
+        if (action === 'care') { await openCare(id); return; }
+        if (action === 'inventory') { await openInventory(id); return; }
+        if (action === 'agenda') {
+          $('agenda-clinic-filter').value = id;
+          showView('agenda');
+          return;
+        }
+
+        if (action === 'edit') {
+          try {
+            const clinic = await request(`${CLINICS_API}/${id}`);
+            fillClinicForm(clinic);
+            state.editingId = id;
+            $('submit').textContent = 'Guardar cambios';
+            $('cancel-edit').hidden = false;
+            showMessage($('message'), 'Editando clínica. Cambia los datos y guarda.', 'info');
+            showView('clinics');
+          } catch (error) {
+            showMessage($('message'), messageFrom(error), 'error');
+          }
+        }
+
+        if (action === 'delete') {
+          if (!window.confirm('¿Eliminar esta clínica? Su inventario, pacientes, citas y comentarios también se borrarán.')) return;
+          try {
+            await request(`${CLINICS_API}/${id}`, { method: 'DELETE' });
+            showMessage($('message'), 'Clínica eliminada.', 'success');
+            if (state.selectedClinicId === id) state.selectedClinicId = null;
+            if (state.careClinicId === id) state.careClinicId = null;
+            if ($('agenda-clinic-filter').value === id) $('agenda-clinic-filter').value = '';
+            await loadClinics();
+            if (document.body.dataset.view === 'agenda') await loadAgenda();
+          } catch (error) {
+            showMessage($('message'), messageFrom(error), 'error');
+          }
+        }
+      });
+
+      $('inventory-clinic-select').addEventListener('change', (event) => {
+        if (event.target.value) openInventory(event.target.value).catch(() => undefined);
+      });
+
+      $('care-clinic-select').addEventListener('change', (event) => {
+        if (event.target.value) openCare(event.target.value).catch(() => undefined);
+      });
+
+      $('back-to-clinics').addEventListener('click', () => showView('clinics'));
+      $('back-to-clinics-care').addEventListener('click', () => showView('clinics'));
+
+      $('item-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!state.selectedClinicId) {
+          showMessage($('item-message'), 'Selecciona una clínica primero.', 'error');
+          return;
+        }
+        try {
+          if (state.editingItemId) {
+            await request(`${itemsUrl()}/${state.editingItemId}`, { method: 'PATCH', body: JSON.stringify(itemDtoFromForm()) });
+            showMessage($('item-message'), 'Insumo actualizado.', 'success');
+          } else {
+            await request(itemsUrl(), { method: 'POST', body: JSON.stringify(itemDtoFromForm()) });
+            showMessage($('item-message'), 'Insumo agregado.', 'success');
+          }
+          resetItemForm();
+          await loadItems();
+        } catch (error) {
+          showMessage($('item-message'), messageFrom(error), 'error');
+        }
+      });
+
+      $('cancel-item-edit').addEventListener('click', () => {
+        resetItemForm();
+        showMessage($('item-message'), 'Edición de insumo cancelada.', 'info');
+      });
+
+      $('items-body').addEventListener('click', async (event) => {
+        const button = event.target.closest('button[data-action]');
+        if (!button) return;
+        const id = button.dataset.id;
+
+        if (button.dataset.action === 'edit-item') {
+          try {
+            fillItemForm(await request(`${itemsUrl()}/${id}`));
+            state.editingItemId = id;
+            $('item-submit').textContent = 'Guardar cambios';
+            $('cancel-item-edit').hidden = false;
+            showMessage($('item-message'), 'Editando insumo. Guarda para aplicar el PATCH.', 'info');
+          } catch (error) {
+            showMessage($('item-message'), messageFrom(error), 'error');
+          }
+        }
+
+        if (button.dataset.action === 'delete-item') {
+          if (!window.confirm('¿Eliminar este insumo?')) return;
+          try {
+            await request(`${itemsUrl()}/${id}`, { method: 'DELETE' });
+            showMessage($('item-message'), 'Insumo eliminado.', 'success');
+            await loadItems();
+          } catch (error) {
+            showMessage($('item-message'), messageFrom(error), 'error');
+          }
+        }
+      });
+
+      $('patient-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!state.careClinicId) {
+          showMessage($('patient-message'), 'Selecciona una clínica primero.', 'error');
+          return;
+        }
+        try {
+          if (state.editingPatientId) {
+            await request(`${patientsUrl()}/${state.editingPatientId}`, { method: 'PATCH', body: JSON.stringify(patientDtoFromForm()) });
+            showMessage($('patient-message'), 'Paciente actualizado.', 'success');
+          } else {
+            await request(patientsUrl(), { method: 'POST', body: JSON.stringify(patientDtoFromForm()) });
+            showMessage($('patient-message'), 'Paciente registrado.', 'success');
           }
           resetPatientForm();
           await loadPatients();
           await loadPatientOptions();
         } catch (error) {
-          showMessage(patientMessage, messageFrom(error), 'error');
+          showMessage($('patient-message'), messageFrom(error), 'error');
         }
       });
 
-      cancelPatientButton.addEventListener('click', () => {
+      $('cancel-patient-edit').addEventListener('click', () => {
         resetPatientForm();
-        showMessage(patientMessage, 'Edición cancelada.', 'info');
+        showMessage($('patient-message'), 'Edición cancelada.', 'info');
       });
 
-      patientsBody.addEventListener('click', async (event) => {
+      $('patients-body').addEventListener('click', async (event) => {
         const button = event.target.closest('button[data-action]');
         if (!button) return;
         const id = button.dataset.id;
 
         if (button.dataset.action === 'edit-patient') {
           try {
-            const patient = await request(`${patientsUrl()}/${id}`);
-            fillPatientForm(patient);
-            editingPatientId = id;
-            patientSubmitButton.textContent = 'Guardar cambios';
-            cancelPatientButton.hidden = false;
-            showMessage(patientMessage, 'Editando paciente.', 'info');
-            patientForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            fillPatientForm(await request(`${patientsUrl()}/${id}`));
+            state.editingPatientId = id;
+            $('patient-submit').textContent = 'Guardar cambios';
+            $('cancel-patient-edit').hidden = false;
+            showMessage($('patient-message'), 'Editando paciente.', 'info');
           } catch (error) {
-            showMessage(patientMessage, messageFrom(error), 'error');
+            showMessage($('patient-message'), messageFrom(error), 'error');
           }
         }
 
@@ -1061,60 +1738,59 @@
           if (!window.confirm('¿Eliminar este paciente? Sus citas y comentarios también se borrarán.')) return;
           try {
             await request(`${patientsUrl()}/${id}`, { method: 'DELETE' });
-            showMessage(patientMessage, 'Paciente eliminado.', 'success');
-            await loadPatients();
-            await loadPatientOptions();
-            await loadAppointments();
+            showMessage($('patient-message'), 'Paciente eliminado.', 'success');
+            await loadCareData();
           } catch (error) {
-            showMessage(patientMessage, messageFrom(error), 'error');
+            showMessage($('patient-message'), messageFrom(error), 'error');
           }
         }
       });
 
-      appointmentForm.addEventListener('submit', async (event) => {
+      $('appointment-form').addEventListener('submit', async (event) => {
         event.preventDefault();
+        if (!state.careClinicId) {
+          showMessage($('appointment-message'), 'Selecciona una clínica primero.', 'error');
+          return;
+        }
         try {
           const dto = appointmentDtoFromForm();
-          if (editingAppointmentId) {
-            await request(`${appointmentsUrl()}/${editingAppointmentId}`, { method: 'PATCH', body: JSON.stringify(dto) });
-            showMessage(appointmentMessage, 'Cita actualizada.', 'success');
+          if (state.editingAppointmentId) {
+            await request(`${appointmentsUrl()}/${state.editingAppointmentId}`, { method: 'PATCH', body: JSON.stringify(dto) });
+            showMessage($('appointment-message'), 'Cita actualizada.', 'success');
           } else {
             await request(appointmentsUrl(), { method: 'POST', body: JSON.stringify(dto) });
-            showMessage(appointmentMessage, 'Cita programada.', 'success');
+            showMessage($('appointment-message'), 'Cita programada.', 'success');
           }
           resetAppointmentForm();
           await loadAppointments();
         } catch (error) {
-          showMessage(appointmentMessage, messageFrom(error), 'error');
+          showMessage($('appointment-message'), messageFrom(error), 'error');
         }
       });
 
-      cancelAppointmentButton.addEventListener('click', () => {
+      $('cancel-appointment-edit').addEventListener('click', () => {
         resetAppointmentForm();
-        showMessage(appointmentMessage, 'Edición cancelada.', 'info');
+        showMessage($('appointment-message'), 'Edición cancelada.', 'info');
       });
 
-      appointmentsBody.addEventListener('click', async (event) => {
+      $('appointments-body').addEventListener('click', async (event) => {
         const button = event.target.closest('button[data-action]');
         if (!button) return;
         const id = button.dataset.id;
 
-        if (button.dataset.action === 'comments') {
-          await openComments(id, button.dataset.reason);
-        }
+        if (button.dataset.action === 'comments') { await openComments(id, button.dataset.reason); return; }
 
         if (button.dataset.action === 'edit-appointment') {
           try {
             const appointment = await request(`${appointmentsUrl()}/${id}`);
             await loadPatientOptions();
             fillAppointmentForm(appointment);
-            editingAppointmentId = id;
-            appointmentSubmitButton.textContent = 'Guardar cambios';
-            cancelAppointmentButton.hidden = false;
-            showMessage(appointmentMessage, 'Editando cita. Guarda para aplicar el PATCH.', 'info');
-            appointmentForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            state.editingAppointmentId = id;
+            $('appointment-submit').textContent = 'Guardar cambios';
+            $('cancel-appointment-edit').hidden = false;
+            showMessage($('appointment-message'), 'Editando cita. Guarda para aplicar el PATCH.', 'info');
           } catch (error) {
-            showMessage(appointmentMessage, messageFrom(error), 'error');
+            showMessage($('appointment-message'), messageFrom(error), 'error');
           }
         }
 
@@ -1122,54 +1798,102 @@
           if (!window.confirm('¿Eliminar esta cita? Su historial de comentarios también se borrará.')) return;
           try {
             await request(`${appointmentsUrl()}/${id}`, { method: 'DELETE' });
-            showMessage(appointmentMessage, 'Cita eliminada.', 'success');
-            if (activeAppointmentId === id) commentsPanel.hidden = true;
+            showMessage($('appointment-message'), 'Cita eliminada.', 'success');
+            if (state.activeAppointmentId === id) {
+              state.activeAppointmentId = null;
+              showCareTab('comments');
+            }
             await loadAppointments();
           } catch (error) {
-            showMessage(appointmentMessage, messageFrom(error), 'error');
+            showMessage($('appointment-message'), messageFrom(error), 'error');
           }
         }
       });
 
-      commentForm.addEventListener('submit', async (event) => {
+      $('comment-form').addEventListener('submit', async (event) => {
         event.preventDefault();
+        if (!state.activeAppointmentId) return;
         try {
-          await request(commentsUrl(activeAppointmentId), {
+          await request(commentsUrl(state.activeAppointmentId), {
             method: 'POST',
             body: JSON.stringify({
-              author: commentAuthor.value.trim(),
-              body: commentBody.value.trim(),
+              author: $('comment-author').value.trim(),
+              body: $('comment-body').value.trim(),
             }),
           });
-          commentForm.reset();
-          showMessage(commentMessage, 'Comentario agregado al historial.', 'success');
+          $('comment-form').reset();
+          showMessage($('comment-message'), 'Comentario agregado al historial.', 'success');
           await loadComments();
         } catch (error) {
-          showMessage(commentMessage, messageFrom(error), 'error');
+          showMessage($('comment-message'), messageFrom(error), 'error');
         }
       });
 
-      commentsBody.addEventListener('click', async (event) => {
+      $('comments-body').addEventListener('click', async (event) => {
         const button = event.target.closest('button[data-action="delete-comment"]');
-        if (!button) return;
+        if (!button || !state.activeAppointmentId) return;
         if (!window.confirm('¿Eliminar este comentario?')) return;
         try {
-          await request(`${commentsUrl(activeAppointmentId)}/${button.dataset.id}`, { method: 'DELETE' });
-          showMessage(commentMessage, 'Comentario eliminado.', 'success');
+          await request(`${commentsUrl(state.activeAppointmentId)}/${button.dataset.id}`, { method: 'DELETE' });
+          showMessage($('comment-message'), 'Comentario eliminado.', 'success');
           await loadComments();
         } catch (error) {
-          showMessage(commentMessage, messageFrom(error), 'error');
+          showMessage($('comment-message'), messageFrom(error), 'error');
         }
       });
 
-      document.getElementById('back-to-clinics-care').addEventListener('click', () => {
-        hideCare();
-        clinicListCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      $('agenda-date').addEventListener('change', () => loadAgenda().catch(() => undefined));
+      $('agenda-clinic-filter').addEventListener('change', () => loadAgenda().catch(() => undefined));
+      $('agenda-prev').addEventListener('click', () => moveAgendaDate(-1));
+      $('agenda-next').addEventListener('click', () => moveAgendaDate(1));
+      $('agenda-today').addEventListener('click', () => {
+        state.agendaDate = new Date().toISOString().slice(0, 10);
+        $('agenda-date').value = state.agendaDate;
+        loadAgenda().catch(() => undefined);
+      });
+      $('agenda-refresh').addEventListener('click', () => loadAgenda().catch(() => undefined));
+
+      $('calendar-grid').addEventListener('click', (event) => {
+        const button = event.target.closest('button[data-date]');
+        if (!button) return;
+        state.agendaDate = button.dataset.date;
+        $('agenda-date').value = state.agendaDate;
+        loadAgenda().catch(() => undefined);
       });
 
-      loadClinics().catch((error) => {
-        showMessage(clinicMessage, messageFrom(error), 'error');
+      $('agenda-timeline').addEventListener('click', (event) => {
+        const button = event.target.closest('button[data-action="care"]');
+        if (!button) return;
+        openCare(button.dataset.clinicId).catch(() => undefined);
       });
+
+      $('check-health').addEventListener('click', () => checkHealth().catch(() => undefined));
+      $('open-docs').addEventListener('click', () => window.open('/api/docs', '_blank', 'noopener'));
+      $('copy-diagnostics').addEventListener('click', () => copyDiagnostics().catch(() => undefined));
+
+      $('settings-form').addEventListener('submit', (event) => {
+        event.preventDefault();
+        settings = settingsFromForm();
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        applySettings();
+        showMessage($('help-message'), 'Preferencias guardadas en este navegador.', 'success');
+        if (document.body.dataset.view === 'agenda') loadAgenda().catch(() => undefined);
+      });
+
+      $('reset-settings').addEventListener('click', () => {
+        settings = { ...DEFAULT_SETTINGS };
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        applySettings();
+        showMessage($('help-message'), 'Preferencias restablecidas.', 'info');
+        if (document.body.dataset.view === 'agenda') loadAgenda().catch(() => undefined);
+      });
+
+      /* ---------------------- Inicio ---------------------- */
+      loadSettings();
+      applySettings();
+      $('agenda-date').value = state.agendaDate;
+      showView('agenda');
+      loadClinics().catch((error) => showMessage($('message'), messageFrom(error), 'error'));
     </script>
   </body>
 </html>
