@@ -13,7 +13,7 @@ export const API_TAGS = [
   {
     name: 'clinics',
     description:
-      'CRUD de práctica: crear, listar, editar y eliminar clínicas. Formulario en /clinicas.html',
+      'CRUD de práctica de clínicas y de su inventario independiente. Formulario en /clinicas.html',
   },
   {
     name: 'products',

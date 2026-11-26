@@ -1193,7 +1193,7 @@ Códigos acordados: `400` validación de DTO, `404` recurso inexistente, `409` d
 npm run start:dev
 ```
 
-Abre `http://localhost:3000/api/docs`. La configuración (título, descripción, versión, servidor y los 7 tags) está centralizada en `src/swagger.config.ts` y la usa `src/main.ts`.
+Abre `http://localhost:3101/api/docs` (o el `PORT` que tengas configurado en `.env`). La configuración (título, descripción, versión, servidor y los 7 tags) está centralizada en `src/swagger.config.ts` y la usa `src/main.ts`.
 
 ### Cobertura de documentación
 
@@ -1211,6 +1211,11 @@ Abre `http://localhost:3000/api/docs`. La configuración (título, descripción,
 | clinics | GET | `/clinics/{id}` | 200 | 400, 404 |
 | clinics | PATCH | `/clinics/{id}` | 200 | 400, 404, 409 |
 | clinics | DELETE | `/clinics/{id}` | 204 | 400, 404 |
+| clinics | POST | `/clinics/{clinicId}/items` | 201 | 400, 404, 409 |
+| clinics | GET | `/clinics/{clinicId}/items` | 200 | 400, 404 |
+| clinics | GET | `/clinics/{clinicId}/items/{itemId}` | 200 | 400, 404 |
+| clinics | PATCH | `/clinics/{clinicId}/items/{itemId}` | 200 | 400, 404, 409 |
+| clinics | DELETE | `/clinics/{clinicId}/items/{itemId}` | 204 | 400, 404 |
 | products | POST | `/products` | 201 | 400, 404, 409 |
 | products | GET | `/products` | 200 | 400 |
 | products | GET | `/products/{id}` | 200 | 400, 404 |
@@ -1225,7 +1230,7 @@ Abre `http://localhost:3000/api/docs`. La configuración (título, descripción,
 | inventory | GET | `/inventory/out-of-stock` | 200 | 400 |
 | health | GET | `/health` | 200 | 503 |
 
-**Total: 15 rutas y 25 operaciones**, todas con `@ApiTags`, `@ApiOperation` y al menos una respuesta 2xx documentada.
+**Total: 17 rutas y 30 operaciones**, todas con `@ApiTags`, `@ApiOperation` y al menos una respuesta 2xx documentada.
 
 Parámetros de consulta relevantes:
 
@@ -1240,7 +1245,7 @@ Todos los `id` y `productId` de ruta usan `ParseUUIDPipe`, por lo que Swagger lo
 `test/swagger.e2e-spec.ts` genera el documento OpenAPI con la misma configuración que `main.ts` y comprueba que:
 
 1. El título, la versión y la descripción sean los esperados.
-2. Estén los 7 tags y las 15 rutas / 25 operaciones.
+2. Estén los 7 tags y las 17 rutas / 30 operaciones.
 3. Cada operación tenga `summary`, `tags` y una respuesta `2xx`.
 4. Estén los esquemas de entidades y DTOs, y que los parámetros de ruta sean UUID.
 
@@ -1256,17 +1261,36 @@ Evidencia sugerida para el PR: captura de `/api/docs` mostrando los tags `app`, 
 
 ---
 
-## 20. Práctica guiada: CRUD de clínicas
+## 20. Práctica guiada: clínicas con inventario independiente
 
-Esta sección existe para practicar **crear, listar, editar, eliminar y corregir errores** desde el propio proyecto. Está aislada en la rama `feature/clinic-crud`, creada desde `develop`.
+Esta sección existe para practicar **crear, listar, editar, eliminar y corregir errores** desde el propio proyecto y, además, **guardar inventario propio para cada clínica**. Está aislada en la rama `feature/clinic-crud`, creada desde `develop`.
 
 ### Cómo abrir el formulario
 
+Si acabas de cambiar de rama o hacer `git pull`, actualiza dependencias y cliente de Prisma:
+
 ```bash
+npm ci
+npx prisma generate
+```
+
+Arranca el API desde la carpeta del proyecto (no desde `clinova/frontend`):
+
+```bash
+cd "C:\Users\ghilary\.local\share\opencode\worktree\affcf9\inventory-api"
 npm run start:dev
 ```
 
-Abre <http://localhost:3000/clinicas.html>. El formulario consume los endpoints y muestra el `statusCode` y el `message` que devuelve la API, para que puedas ver exactamente qué falló y por qué.
+Abre <http://localhost:3101/clinicas.html> (o el `PORT` de tu `.env`). El formulario consume los endpoints y muestra el `statusCode` y el `message` que devuelve la API, para que veas exactamente qué falló y por qué.
+
+### Cómo guardar el inventario de cada clínica
+
+1. Crea una clínica o elige una de la tabla.
+2. Pulsa **Inventario** en la fila de esa clínica.
+3. Se abre el panel «Inventario de ...» con su propio formulario: nombre, SKU, cantidad, stock mínimo, unidad y descripción.
+4. Pulsa **Agregar insumo**. Queda guardado en `clinic_inventory_items` con el `clinic_id` de esa clínica.
+
+Cada clínica es independiente: el mismo nombre de insumo existe en dos clínicas distintas, pero no se repite dentro de una misma clínica (`409`). Al eliminar la clínica, su inventario se borra en cascada.
 
 ### Endpoints
 
@@ -1276,9 +1300,14 @@ Abre <http://localhost:3000/clinicas.html>. El formulario consume los endpoints 
 | `GET` | `/clinics` | Lista ordenado por nombre. |
 | `GET` | `/clinics/{id}` | Consulta por UUID. |
 | `PATCH` | `/clinics/{id}` | Edita sólo los campos enviados. |
-| `DELETE` | `/clinics/{id}` | Elimina la clínica y devuelve `204`. |
+| `DELETE` | `/clinics/{id}` | Elimina la clínica y su inventario; devuelve `204`. |
+| `POST` | `/clinics/{clinicId}/items` | Agrega un insumo a esa clínica. |
+| `GET` | `/clinics/{clinicId}/items` | Lista el inventario de esa clínica. |
+| `GET` | `/clinics/{clinicId}/items/{itemId}` | Consulta un insumo. |
+| `PATCH` | `/clinics/{clinicId}/items/{itemId}` | Edita el insumo (por ejemplo, la cantidad). |
+| `DELETE` | `/clinics/{clinicId}/items/{itemId}` | Elimina el insumo; devuelve `204`. |
 
-El modelo `Clinic` y la migración `20261126203153_add_clinics` viven en `prisma/schema.prisma` y `prisma/migrations/`. Antes de probar, aplica la migración:
+Los modelos `Clinic` y `ClinicInventoryItem` y las migraciones `20261126203153_add_clinics` y `20261126204538_add_clinic_inventory_items` viven en `prisma/schema.prisma` y `prisma/migrations/`. Para aplicarlas en tu base:
 
 ```bash
 npm run migrate:deploy
@@ -1286,12 +1315,13 @@ npm run migrate:deploy
 
 ### Ejercicios recomendados
 
-1. Crea una clínica y luego crea otra con el **mismo nombre**: verás un `409`.
-2. Envía un teléfono como `abc` o un correo sin `@`: verás un `400` con los mensajes de `class-validator`.
-3. Pulsa **Editar** en la tabla, cambia el nombre y guarda: eso dispara un `PATCH`.
-4. Elimina una clínica y vuelve a consultarla: verás un `404`.
-5. Desmarca **Clínica activa** en lugar de borrar: verás cómo el `PATCH` cambia `active` sin perder el registro.
-6. Compara el error en el formulario con la respuesta de Swagger en `/api/docs`.
+1. Crea una clínica y otra con el **mismo nombre**: verás un `409`.
+2. Envía un teléfono `abc` o un correo sin `@`: verás un `400` de `class-validator`.
+3. Entra a **Inventario** y agrega dos insumos; luego entra a otra clínica: no debe ver los insumos de la anterior.
+4. Agrega el mismo nombre de insumo en otra clínica: se permite. Repítelo en la misma clínica: `409`.
+5. Edita la **cantidad** de un insumo y deja el **stock mínimo** mayor: verás la etiqueta «Stock bajo».
+6. Elimina un insumo: el registro desaparece pero la clínica sigue existiendo.
+7. Elimina una clínica con insumos: su inventario se borra en cascada.
 
 ### Verificación
 
@@ -1300,4 +1330,4 @@ npm run test -- --runInBand
 npm run test:e2e -- --runInBand
 ```
 
-Las pruebas unitarias están en `src/clinics/clinics.service.spec.ts` y las de integración HTTP en `test/clinics.e2e-spec.ts` (usan `TEST_DATABASE_URL`).
+Las pruebas unitarias están en `src/clinics/clinics.service.spec.ts` y `src/clinics/clinic-items.service.spec.ts`; las de integración HTTP en `test/clinics.e2e-spec.ts` y `test/clinic-items.e2e-spec.ts` (usan `TEST_DATABASE_URL`).

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Práctica CRUD · Clínicas</title>
+    <title>Práctica CRUD · Clínicas e inventario</title>
     <style>
       :root {
         color-scheme: light;
@@ -45,6 +45,7 @@
         border-radius: 18px;
         box-shadow: 0 18px 40px rgba(30, 54, 92, 0.08);
         padding: 24px;
+        margin-bottom: 26px;
       }
       form {
         display: grid;
@@ -108,7 +109,6 @@
       .message[data-kind="error"] { background: #fff0f0; color: #c92a2a; }
       .message[data-kind="success"] { background: #ebfbee; color: #2b8a3e; }
       .message[data-kind="info"] { background: #e7f5ff; color: #1864ab; }
-      .list { margin-top: 26px; }
       .list-head {
         display: flex;
         justify-content: space-between;
@@ -117,10 +117,12 @@
         margin-bottom: 14px;
       }
       .list-head h2 { margin: 0; font-size: 20px; }
+      .subtitle { margin: 4px 0 0; color: #5b6b85; font-size: 13px; }
       table { width: 100%; border-collapse: collapse; font-size: 14px; }
       th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #edf1f7; vertical-align: middle; }
       th { color: #5b6b85; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
       tr:last-child td { border-bottom: 0; }
+      tr.selected { background: #f5f8ff; }
       .pill {
         display: inline-block;
         border-radius: 999px;
@@ -130,11 +132,14 @@
       }
       .pill.on { background: #ebfbee; color: #2b8a3e; }
       .pill.off { background: #f1f3f5; color: #868e96; }
-      .row-actions { display: flex; gap: 8px; }
+      .pill.warn { background: #fff3bf; color: #e67700; }
+      .row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
       code { background: #f1f3f5; border-radius: 5px; padding: 2px 5px; font-size: 12px; }
+      #inventory-panel { border-color: #c9d7ff; }
       @media (max-width: 720px) {
         header { flex-direction: column; align-items: flex-start; }
         form { grid-template-columns: 1fr; }
+        .list-head { flex-direction: column; align-items: flex-start; }
       }
     </style>
   </head>
@@ -142,13 +147,13 @@
     <main class="wrap">
       <header>
         <div>
-          <h1>Práctica CRUD · Clínicas</h1>
-          <p>Crea, edita, elimina y provoca errores para aprender el contrato de la API.</p>
+          <h1>Práctica CRUD · Clínicas e inventario</h1>
+          <p>Cada clínica tiene su propio inventario. Crea, edita, elimina y provoca errores.</p>
         </div>
         <a class="docs" href="/api/docs">Ver Swagger →</a>
       </header>
 
-      <section class="card">
+      <section class="card" id="clinic-form-card">
         <form id="clinic-form" novalidate>
           <label>
             Nombre *
@@ -183,7 +188,7 @@
         <p class="message" id="message" data-kind="info" hidden></p>
       </section>
 
-      <section class="card list">
+      <section class="card list" id="clinic-list-card">
         <div class="list-head">
           <h2>Clínicas registradas</h2>
           <button class="small" id="refresh" type="button">Recargar</button>
@@ -203,21 +208,92 @@
           </tbody>
         </table>
       </section>
+
+      <section class="card list" id="inventory-panel" hidden>
+        <div class="list-head">
+          <div>
+            <h2 id="inventory-title">Inventario de la clínica</h2>
+            <p class="subtitle" id="inventory-subtitle"></p>
+          </div>
+          <button class="secondary" id="back-to-clinics" type="button">← Volver a clínicas</button>
+        </div>
+
+        <form id="item-form" novalidate>
+          <label>
+            Nombre del insumo *
+            <input id="item-name" required maxlength="120" placeholder="Jeringas 10 ml" />
+          </label>
+          <label>
+            SKU
+            <input id="item-sku" maxlength="60" placeholder="JER-10" />
+          </label>
+          <label>
+            Cantidad
+            <input id="item-quantity" type="number" min="0" value="0" />
+          </label>
+          <label>
+            Stock mínimo
+            <input id="item-min-stock" type="number" min="0" value="0" />
+          </label>
+          <label>
+            Unidad
+            <input id="item-unit" maxlength="20" placeholder="unidades" />
+          </label>
+          <label>
+            Descripción
+            <input id="item-description" maxlength="255" placeholder="Uso en consulta externa" />
+          </label>
+          <div class="actions">
+            <button class="primary" id="item-submit" type="submit">Agregar insumo</button>
+            <button class="secondary" id="cancel-item-edit" type="button" hidden>Cancelar edición</button>
+            <span>El mismo nombre se permite en otra clínica.</span>
+          </div>
+        </form>
+        <p class="message" id="item-message" data-kind="info" hidden></p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Insumo</th>
+              <th>SKU</th>
+              <th>Cantidad</th>
+              <th>Mínimo</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="items-body">
+            <tr><td colspan="6">Selecciona una clínica para ver su inventario.</td></tr>
+          </tbody>
+        </table>
+      </section>
     </main>
 
     <script>
-      const API = '/clinics';
-      const form = document.getElementById('clinic-form');
-      const message = document.getElementById('message');
+      const CLINICS_API = '/clinics';
+      const clinicForm = document.getElementById('clinic-form');
+      const clinicMessage = document.getElementById('message');
       const submitButton = document.getElementById('submit');
       const cancelButton = document.getElementById('cancel-edit');
-      const tbody = document.getElementById('clinics-body');
-      let editingId = null;
+      const clinicsBody = document.getElementById('clinics-body');
+      const clinicListCard = document.getElementById('clinic-list-card');
+      const inventoryPanel = document.getElementById('inventory-panel');
+      const inventoryTitle = document.getElementById('inventory-title');
+      const inventorySubtitle = document.getElementById('inventory-subtitle');
+      const itemForm = document.getElementById('item-form');
+      const itemMessage = document.getElementById('item-message');
+      const itemSubmitButton = document.getElementById('item-submit');
+      const cancelItemButton = document.getElementById('cancel-item-edit');
+      const itemsBody = document.getElementById('items-body');
 
-      function showMessage(text, kind = 'info') {
-        message.textContent = text;
-        message.dataset.kind = kind;
-        message.hidden = !text;
+      let editingId = null;
+      let selectedClinicId = null;
+      let editingItemId = null;
+
+      function showMessage(target, text, kind = 'info') {
+        target.textContent = text;
+        target.dataset.kind = kind;
+        target.hidden = !text;
       }
 
       function escapeHtml(value = '') {
@@ -230,8 +306,15 @@
         })[char]);
       }
 
-      async function request(path, options = {}) {
-        const response = await fetch(`${API}${path}`, {
+      function messageFrom(error) {
+        const detail = Array.isArray(error?.message)
+          ? error.message.join(', ')
+          : (error?.message || error || 'Error desconocido');
+        return `${error?.status || 'Error'}: ${String(detail)}`;
+      }
+
+      async function request(url, options = {}) {
+        const response = await fetch(url, {
           ...options,
           headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
         });
@@ -245,10 +328,11 @@
         }
 
         if (!response.ok) {
-          const detail = Array.isArray(payload?.message)
-            ? payload.message.join(', ')
-            : (payload?.message || payload || 'Error desconocido');
-          const error = new Error(String(detail));
+          const error = new Error(
+            Array.isArray(payload?.message)
+              ? payload.message.join(', ')
+              : String(payload?.message || payload || 'Error desconocido'),
+          );
           error.status = response.status;
           throw error;
         }
@@ -256,7 +340,7 @@
         return payload;
       }
 
-      function dtoFromForm() {
+      function clinicDtoFromForm() {
         return {
           name: document.getElementById('name').value.trim(),
           phone: document.getElementById('phone').value.trim(),
@@ -267,7 +351,7 @@
         };
       }
 
-      function fillForm(clinic) {
+      function fillClinicForm(clinic) {
         document.getElementById('name').value = clinic.name ?? '';
         document.getElementById('phone').value = clinic.phone ?? '';
         document.getElementById('address').value = clinic.address ?? '';
@@ -276,28 +360,29 @@
         document.getElementById('active').checked = Boolean(clinic.active);
       }
 
-      function resetForm() {
-        form.reset();
+      function resetClinicForm() {
+        clinicForm.reset();
         document.getElementById('active').checked = true;
         editingId = null;
         submitButton.textContent = 'Crear clínica';
         cancelButton.hidden = true;
       }
 
-      function render(clinics) {
+      function renderClinics(clinics) {
         if (!clinics.length) {
-          tbody.innerHTML = '<tr><td colspan="5">No hay clínicas todavía. Crea la primera ↑</td></tr>';
+          clinicsBody.innerHTML = '<tr><td colspan="5">No hay clínicas todavía. Crea la primera ↑</td></tr>';
           return;
         }
 
-        tbody.innerHTML = clinics.map((clinic) => `
-          <tr>
+        clinicsBody.innerHTML = clinics.map((clinic) => `
+          <tr class="${clinic.id === selectedClinicId ? 'selected' : ''}">
             <td><strong>${escapeHtml(clinic.name)}</strong><br /><code>${escapeHtml(clinic.id)}</code></td>
             <td>${escapeHtml(clinic.phone)}</td>
             <td>${escapeHtml(clinic.address)}</td>
             <td><span class="pill ${clinic.active ? 'on' : 'off'}">${clinic.active ? 'Activa' : 'Inactiva'}</span></td>
             <td>
               <div class="row-actions">
+                <button class="small" type="button" data-action="inventory" data-id="${escapeHtml(clinic.id)}" data-name="${escapeHtml(clinic.name)}">Inventario</button>
                 <button class="small" type="button" data-action="edit" data-id="${escapeHtml(clinic.id)}">Editar</button>
                 <button class="danger" type="button" data-action="delete" data-id="${escapeHtml(clinic.id)}">Eliminar</button>
               </div>
@@ -307,76 +392,230 @@
       }
 
       async function loadClinics() {
-        const clinics = await request('');
-        render(clinics);
-        showMessage(`${clinics.length} clínica(s) cargadas.`, 'info');
+        const clinics = await request(CLINICS_API);
+        renderClinics(clinics);
+        showMessage(clinicMessage, `${clinics.length} clínica(s) cargadas.`, 'info');
       }
 
-      form.addEventListener('submit', async (event) => {
+      clinicForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const dto = dtoFromForm();
+        const dto = clinicDtoFromForm();
 
         try {
           if (editingId) {
-            await request(`/${editingId}`, { method: 'PATCH', body: JSON.stringify(dto) });
-            showMessage('Clínica actualizada correctamente.', 'success');
+            await request(`${CLINICS_API}/${editingId}`, { method: 'PATCH', body: JSON.stringify(dto) });
+            showMessage(clinicMessage, 'Clínica actualizada correctamente.', 'success');
           } else {
-            await request('', { method: 'POST', body: JSON.stringify(dto) });
-            showMessage('Clínica creada correctamente.', 'success');
+            await request(CLINICS_API, { method: 'POST', body: JSON.stringify(dto) });
+            showMessage(clinicMessage, 'Clínica creada correctamente.', 'success');
           }
-          resetForm();
+          resetClinicForm();
           await loadClinics();
         } catch (error) {
-          showMessage(`${error.status || 'Error'}: ${error.message}`, 'error');
+          showMessage(clinicMessage, messageFrom(error), 'error');
         }
       });
 
       cancelButton.addEventListener('click', () => {
-        resetForm();
-        showMessage('Edición cancelada.', 'info');
+        resetClinicForm();
+        showMessage(clinicMessage, 'Edición cancelada.', 'info');
       });
 
       document.getElementById('refresh').addEventListener('click', async () => {
         try {
           await loadClinics();
         } catch (error) {
-          showMessage(`${error.status || 'Error'}: ${error.message}`, 'error');
+          showMessage(clinicMessage, messageFrom(error), 'error');
         }
       });
 
-      tbody.addEventListener('click', async (event) => {
+      clinicsBody.addEventListener('click', async (event) => {
         const button = event.target.closest('button[data-action]');
         if (!button) return;
 
         const id = button.dataset.id;
-        if (button.dataset.action === 'edit') {
+        const action = button.dataset.action;
+
+        if (action === 'edit') {
           try {
-            const clinic = await request(`/${id}`);
-            fillForm(clinic);
+            const clinic = await request(`${CLINICS_API}/${id}`);
+            fillClinicForm(clinic);
             editingId = id;
             submitButton.textContent = 'Guardar cambios';
             cancelButton.hidden = false;
-            showMessage('Editando clínica. Cambia los datos y guarda.', 'info');
-            form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            showMessage(clinicMessage, 'Editando clínica. Cambia los datos y guarda.', 'info');
+            clinicForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
           } catch (error) {
-            showMessage(`${error.status || 'Error'}: ${error.message}`, 'error');
+            showMessage(clinicMessage, messageFrom(error), 'error');
           }
         }
 
-        if (button.dataset.action === 'delete') {
-          if (!window.confirm('¿Eliminar esta clínica? Esta acción no se puede deshacer.')) return;
+        if (action === 'delete') {
+          if (!window.confirm('¿Eliminar esta clínica? Su inventario también se borrará.')) return;
           try {
-            await request(`/${id}`, { method: 'DELETE' });
-            showMessage('Clínica eliminada. Pulsa de nuevo para ver un 404.', 'success');
+            await request(`${CLINICS_API}/${id}`, { method: 'DELETE' });
+            showMessage(clinicMessage, 'Clínica eliminada.', 'success');
+            if (selectedClinicId === id) hideInventory();
             await loadClinics();
           } catch (error) {
-            showMessage(`${error.status || 'Error'}: ${error.message}`, 'error');
+            showMessage(clinicMessage, messageFrom(error), 'error');
+          }
+        }
+
+        if (action === 'inventory') {
+          selectedClinicId = id;
+          editingItemId = null;
+          inventoryTitle.textContent = `Inventario de ${button.dataset.name || 'la clínica'}`;
+          inventorySubtitle.textContent = `Clínica ${id}`;
+          inventoryPanel.hidden = false;
+          resetItemForm();
+          await loadClinics();
+          try {
+            await loadItems();
+          } catch (error) {
+            showMessage(itemMessage, messageFrom(error), 'error');
+          }
+          inventoryPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+
+      function itemsUrl() {
+        return `${CLINICS_API}/${selectedClinicId}/items`;
+      }
+
+      function itemDtoFromForm() {
+        return {
+          name: document.getElementById('item-name').value.trim(),
+          sku: document.getElementById('item-sku').value.trim() || undefined,
+          quantity: Number(document.getElementById('item-quantity').value || 0),
+          minStock: Number(document.getElementById('item-min-stock').value || 0),
+          unit: document.getElementById('item-unit').value.trim() || undefined,
+          description: document.getElementById('item-description').value.trim() || undefined,
+        };
+      }
+
+      function fillItemForm(item) {
+        document.getElementById('item-name').value = item.name ?? '';
+        document.getElementById('item-sku').value = item.sku ?? '';
+        document.getElementById('item-quantity').value = item.quantity ?? 0;
+        document.getElementById('item-min-stock').value = item.minStock ?? 0;
+        document.getElementById('item-unit').value = item.unit ?? '';
+        document.getElementById('item-description').value = item.description ?? '';
+      }
+
+      function resetItemForm() {
+        itemForm.reset();
+        document.getElementById('item-quantity').value = 0;
+        document.getElementById('item-min-stock').value = 0;
+        editingItemId = null;
+        itemSubmitButton.textContent = 'Agregar insumo';
+        cancelItemButton.hidden = true;
+      }
+
+      function renderItems(items) {
+        if (!items.length) {
+          itemsBody.innerHTML = '<tr><td colspan="6">Esta clínica aún no tiene insumos.</td></tr>';
+          return;
+        }
+
+        itemsBody.innerHTML = items.map((item) => {
+          const low = item.quantity <= item.minStock;
+          return `
+            <tr>
+              <td><strong>${escapeHtml(item.name)}</strong><br /><code>${escapeHtml(item.id)}</code></td>
+              <td>${item.sku ? escapeHtml(item.sku) : '—'}</td>
+              <td>${item.quantity}</td>
+              <td>${item.minStock}</td>
+              <td><span class="pill ${low ? 'warn' : 'on'}">${low ? 'Stock bajo' : 'OK'}</span></td>
+              <td>
+                <div class="row-actions">
+                  <button class="small" type="button" data-action="edit-item" data-id="${escapeHtml(item.id)}">Editar</button>
+                  <button class="danger" type="button" data-action="delete-item" data-id="${escapeHtml(item.id)}">Eliminar</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      async function loadItems() {
+        const items = await request(itemsUrl());
+        renderItems(items);
+        showMessage(itemMessage, `${items.length} insumo(s) cargados.`, 'info');
+      }
+
+      function hideInventory() {
+        selectedClinicId = null;
+        editingItemId = null;
+        inventoryPanel.hidden = true;
+        itemsBody.innerHTML = '<tr><td colspan="6">Selecciona una clínica para ver su inventario.</td></tr>';
+        resetItemForm();
+        loadClinics().catch(() => undefined);
+      }
+
+      itemForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const dto = itemDtoFromForm();
+
+        try {
+          if (editingItemId) {
+            await request(`${itemsUrl()}/${editingItemId}`, { method: 'PATCH', body: JSON.stringify(dto) });
+            showMessage(itemMessage, 'Insumo actualizado.', 'success');
+          } else {
+            await request(itemsUrl(), { method: 'POST', body: JSON.stringify(dto) });
+            showMessage(itemMessage, 'Insumo agregado.', 'success');
+          }
+          resetItemForm();
+          await loadItems();
+        } catch (error) {
+          showMessage(itemMessage, messageFrom(error), 'error');
+        }
+      });
+
+      cancelItemButton.addEventListener('click', () => {
+        resetItemForm();
+        showMessage(itemMessage, 'Edición de insumo cancelada.', 'info');
+      });
+
+      document.getElementById('back-to-clinics').addEventListener('click', () => {
+        hideInventory();
+        clinicListCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+
+      itemsBody.addEventListener('click', async (event) => {
+        const button = event.target.closest('button[data-action]');
+        if (!button) return;
+
+        const id = button.dataset.id;
+
+        if (button.dataset.action === 'edit-item') {
+          try {
+            const item = await request(`${itemsUrl()}/${id}`);
+            fillItemForm(item);
+            editingItemId = id;
+            itemSubmitButton.textContent = 'Guardar cambios';
+            cancelItemButton.hidden = false;
+            showMessage(itemMessage, 'Editando insumo. Guarda para aplicar el PATCH.', 'info');
+            itemForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          } catch (error) {
+            showMessage(itemMessage, messageFrom(error), 'error');
+          }
+        }
+
+        if (button.dataset.action === 'delete-item') {
+          if (!window.confirm('¿Eliminar este insumo?')) return;
+          try {
+            await request(`${itemsUrl()}/${id}`, { method: 'DELETE' });
+            showMessage(itemMessage, 'Insumo eliminado.', 'success');
+            await loadItems();
+          } catch (error) {
+            showMessage(itemMessage, messageFrom(error), 'error');
           }
         }
       });
 
       loadClinics().catch((error) => {
-        showMessage(`${error.status || 'Error'}: ${error.message}`, 'error');
+        showMessage(clinicMessage, messageFrom(error), 'error');
       });
     </script>
   </body>

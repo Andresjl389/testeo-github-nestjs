@@ -19,6 +19,8 @@ describe('Swagger (documentación completa)', () => {
     '/categories/{id}/products': ['get'],
     '/clinics': ['post', 'get'],
     '/clinics/{id}': ['get', 'patch', 'delete'],
+    '/clinics/{clinicId}/items': ['post', 'get'],
+    '/clinics/{clinicId}/items/{itemId}': ['get', 'patch', 'delete'],
     '/products': ['post', 'get'],
     '/products/{id}': ['get', 'patch', 'delete'],
     '/inventory-movements': ['post', 'get'],
@@ -56,7 +58,7 @@ describe('Swagger (documentación completa)', () => {
     );
   });
 
-  it('documenta las 15 rutas y las 25 operaciones esperadas', () => {
+  it('documenta las 17 rutas y las 30 operaciones esperadas', () => {
     expect(Object.keys(document.paths).sort()).toEqual(
       Object.keys(expectedOperations).sort(),
     );
@@ -69,7 +71,7 @@ describe('Swagger (documentación completa)', () => {
         operations += 1;
       }
     }
-    expect(operations).toBe(25);
+    expect(operations).toBe(30);
   });
 
   it('toda operación tiene summary, tags y una respuesta 2xx', () => {
@@ -98,6 +100,7 @@ describe('Swagger (documentación completa)', () => {
     for (const schema of [
       'CategoryEntity',
       'ClinicEntity',
+      'ClinicInventoryItemEntity',
       'ProductEntity',
       'InventoryMovementEntity',
       'InventorySummaryEntity',
@@ -108,6 +111,7 @@ describe('Swagger (documentación completa)', () => {
     }
     expect(schemas).toContain('CreateProductDto');
     expect(schemas).toContain('CreateClinicDto');
+    expect(schemas).toContain('CreateClinicItemDto');
     expect(schemas).toContain('CreateInventoryMovementDto');
 
     const productIdParam = document.paths['/products/{id}']?.get
